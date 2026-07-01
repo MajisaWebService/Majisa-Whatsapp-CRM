@@ -1,13 +1,14 @@
 // src/app.js
 
+
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
-
-const routes = require("./routes");
+const routes = require("./routes/index.js");
 
 const app = express();
 
@@ -17,7 +18,6 @@ app.use(helmet());
 app.use(compression());
 app.use(cookieParser());
 app.use(morgan("dev"));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
