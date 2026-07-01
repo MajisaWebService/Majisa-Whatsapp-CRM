@@ -1,14 +1,12 @@
 // src/app.js
 
-
-
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const compression = require("compression");
-const cookieParser = require("cookie-parser");
-const morgan = require("morgan");
-const routes = require("./routes/index.js");
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import morgan from "morgan";
+import routes from "./routes/index.js";
 
 const app = express();
 
@@ -32,4 +30,4 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api", routes);
 
-module.exports = app;
+export default app;

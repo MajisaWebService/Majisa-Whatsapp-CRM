@@ -1,8 +1,8 @@
-const bcrypt = require("bcryptjs");
-const Admin = require("../models/Admin");
-const generateToken = require("../utils/generateToken");
+import bcrypt from "bcryptjs";
+import Admin from "../models/Admin.js";
+import generateToken from "../utils/generateToken.js";
 
-const registerAdmin = async (req, res) => {
+export const registerAdmin = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
@@ -55,7 +55,7 @@ const registerAdmin = async (req, res) => {
     }
 };
 
-const loginAdmin = async (req, res) => {
+export const loginAdmin = async (req, res) => {
     try {
 
         const { email, password } = req.body;
@@ -113,5 +113,3 @@ const loginAdmin = async (req, res) => {
 
     }
 };
-
-module.exports = { registerAdmin, loginAdmin };
