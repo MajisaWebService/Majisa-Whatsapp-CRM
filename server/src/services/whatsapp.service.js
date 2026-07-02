@@ -1,7 +1,10 @@
+// src/services/whatsapp.service.js
+
 import pkg from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
+import { handleIncomingMessage } from "../chatbot/index.js";
 
-const { Client, LocalAuth } = pkg;
+const { Client, LocalAuth, MessageMedia } = pkg;
 
 // Create WhatsApp Client
 const client = new Client({
@@ -20,21 +23,25 @@ const client = new Client({
 // ==============================
 // QR Code
 // ==============================
+
 client.on("qr", (qr) => {
+
     console.clear();
 
     console.log("========================================");
     console.log("📱 Scan this QR using WhatsApp Business");
-    console.log("========================================\n");
+    console.log("========================================");
 
     qrcode.generate(qr, {
         small: true
     });
+
 });
 
 // ==============================
 // Authentication
 // ==============================
+
 client.on("authenticated", () => {
     console.log("🔐 WhatsApp Authenticated");
 });
@@ -42,6 +49,7 @@ client.on("authenticated", () => {
 // ==============================
 // Ready
 // ==============================
+
 client.on("ready", () => {
     console.log("========================================");
     console.log("✅ WhatsApp Connected Successfully");
@@ -49,8 +57,9 @@ client.on("ready", () => {
 });
 
 // ==============================
-// Authentication Failed
+// Authentication Failure
 // ==============================
+
 client.on("auth_failure", (msg) => {
     console.error("❌ Authentication Failed");
     console.error(msg);
@@ -59,161 +68,124 @@ client.on("auth_failure", (msg) => {
 // ==============================
 // Disconnected
 // ==============================
+
 client.on("disconnected", (reason) => {
-    console.log("⚠️ WhatsApp Disconnected");
+    console.log("⚠ WhatsApp Disconnected");
     console.log("Reason:", reason);
 });
 
 // ==============================
 // Incoming Messages
 // ==============================
-client.on("message", async (message) => {
+
+// For newer versions of whatsapp-web.js
+client.on("message_create", async (message) => {
+
     try {
 
-        console.log("\n==============================");
-        console.log("📩 New WhatsApp Message");
-        console.log("==============================");
-        console.log("From :", message.from);
-        console.log("Body :", message.body);
-        console.log("Type :", message.type);
-        console.log("==============================\n");
+        if (message.fromMe) return;
 
-        // Convert message to lowercase
-        const text = message.body.trim().toLowerCase();
-
-        // Welcome Menu
-        if (text === "hi", "hii", "hy" || text === "hello") {
-
-            await message.reply(
-                `👋 Welcome to Majisa Web Solutions!
-
-Please choose an option:
-
-1️⃣ Website Development
-2️⃣ Mobile App Development
-3️⃣ Digital Marketing
-4️⃣ Cloud & DevOps
-5️⃣ Talk to an Executive`
-            );
-
-            return;
-        }
-
-        // Website Menu
-        if (text === "1") {
-
-            await message.reply(
-                `🌐 Website Development
-
-What type of website do you need?
-
-1️⃣ Business Website
-2️⃣ E-commerce Website
-3️⃣ Portfolio Website
-4️⃣ Custom Web Application`
-            );
-
-            return;
-        }
-
-        // Mobile App
-        if (text === "2") {
-
-            await message.reply(
-                `📱 Mobile App Development
-
-Android
-iOS
-Flutter
-
-Our executive will contact you shortly.`
-            );
-
-            return;
-        }
-
-        // Digital Marketing
-        if (text === "3") {
-
-            await message.reply(
-                `📈 Digital Marketing
-
-✔ SEO
-✔ Google Ads
-✔ Facebook Ads
-✔ Instagram Marketing
-
-Our executive will contact you soon.`
-            );
-
-            return;
-        }
-
-        // Cloud & DevOps
-        if (text === "4") {
-
-            await message.reply(
-                `☁ Cloud & DevOps
-
-AWS
-Azure
-Google Cloud
-Docker
-Kubernetes
-CI/CD
-
-Our expert will contact you soon.`
-            );
-
-            return;
-        }
-
-        // Talk to Executive
-        if (text === "5") {
-
-            await message.reply(
-                `👨‍💼 Thank you.
-
-Our executive will contact you shortly.
-
-📞 Majisa Web Solutions`
-            );
-
-            return;
-        }
+        await handleIncomingMessage(message);
 
     } catch (error) {
-        console.error("❌ Message Error:", error);
+
+        console.error("Message Handler Error:", error);
+
     }
+
 });
+
+// If your version doesn't support "message_create",
+// comment the above block and uncomment this:
+
+/*
+client.on("message", async (message) => {
+
+    try {
+
+        if (message.fromMe) return;
+
+        await handleIncomingMessage(message);
+
+    } catch (error) {
+
+        console.error("Message Handler Error:", error);
+
+    }
+
+});
+*/
 
 // ==============================
 // Initialize WhatsApp
 // ==============================
+
 const initializeWhatsApp = async () => {
+
     try {
+
         console.log("📱 Initializing WhatsApp...");
+
         await client.initialize();
+
     } catch (error) {
-        console.error("❌ WhatsApp Initialization Error:", error);
+
+        console.error("Initialization Error:", error);
+
     }
+
 };
 
 // ==============================
 // Close WhatsApp
 // ==============================
+
 const closeWhatsApp = async () => {
+
     try {
-        console.log("Shutting down WhatsApp client...");
+
+        console.log("Closing WhatsApp...");
+
         await client.destroy();
-        console.log("✅ WhatsApp client destroyed successfully");
+
+        console.log("✅ WhatsApp Closed");
+
     } catch (error) {
-        console.error("❌ Error destroying WhatsApp client:", error);
+
+        console.error(error);
+
     }
+
+};
+
+// ==============================
+// Send PDF to Customer
+// ==============================
+
+const sendPdfToCustomer = async (customerId, pdfPath, caption = "") => {
+
+    try {
+
+        const media = MessageMedia.fromFilePath(pdfPath);
+
+        await client.sendMessage(customerId, media, {
+            caption
+        });
+
+        console.log("✅ PDF Sent to:", customerId);
+
+    } catch (error) {
+
+        console.error("❌ Error sending PDF:", error);
+        throw error;
+
+    }
+
 };
 
 export {
     client,
     initializeWhatsApp,
-    closeWhatsApp
+    closeWhatsApp,
+    sendPdfToCustomer
 };

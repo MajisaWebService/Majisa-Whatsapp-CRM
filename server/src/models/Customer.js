@@ -2,54 +2,95 @@ import mongoose from "mongoose";
 
 const customerSchema = new mongoose.Schema(
     {
-        name: {
-            type: String,
-            trim: true,
-            default: "",
-        },
-
-        phone: {
+        customerId: {
             type: String,
             required: true,
-            unique: true,
-            index: true,
+            unique: true
         },
 
-        email: {
+        name: {
             type: String,
-            trim: true,
-            lowercase: true,
-            default: "",
+            default: ""
         },
 
         company: {
             type: String,
-            default: "",
+            default: ""
         },
 
-        tags: {
+        email: {
+            type: String,
+            default: ""
+        },
+
+        phone: {
+            type: String,
+            default: ""
+        },
+
+        city: {
+            type: String,
+            default: ""
+        },
+
+        service: {
+            type: String,
+            default: ""
+        },
+
+        requirement: {
+            type: String,
+            default: ""
+        },
+
+        budget: {
+            type: String,
+            default: ""
+        },
+
+        timeline: {
+            type: String,
+            default: ""
+        },
+
+        features: {
             type: [String],
-            default: [],
+            default: []
         },
 
         status: {
             type: String,
-            enum: ["NEW", "INTERESTED", "FOLLOW_UP", "CUSTOMER", "BLOCKED"],
-            default: "NEW",
+            default: "New Lead"
         },
 
         source: {
             type: String,
-            default: "WhatsApp",
+            default: "WhatsApp"
         },
 
-        isActive: {
+        quotationSent: {
             type: Boolean,
-            default: true,
+            default: false
         },
+
+        paymentStatus: {
+            type: String,
+            default: "Pending"
+        },
+
+        assignedTo: {
+            type: String,
+            default: ""
+        },
+
+        notes: {
+            type: String,
+            default: ""
+        }
+
     },
     {
-        timestamps: true,
+        timestamps: true
     }
 );
 
