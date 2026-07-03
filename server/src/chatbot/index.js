@@ -7,7 +7,8 @@ import { handleServiceFlow } from "./handlers/service.handler.js";
 import { handleBack } from "./handlers/back.handler.js";
 import {
     createCustomer,
-    updateCustomer
+    updateCustomer,
+    getCustomer
 } from "./services/customer.service.js";
 import { getServices } from "./config/pricing.config.js";
 
@@ -41,6 +42,67 @@ export const handleIncomingMessage = async (message) => {
         console.log("State    :", chatState.state);
         console.log("Message  :", text);
         console.log("========================================");
+
+        // --- NLP Auto-Extraction Block ---
+        const customerForNlp = await getCustomer(customerId);
+        const isDetailsIncomplete = customerForNlp && (!customerForNlp.name || !customerForNlp.company || !customerForNlp.email || !customerForNlp.phone);
+
+        if (chatState.state !== "COMPLETED" || isDetailsIncomplete) {
+            const { extractLeadDetails } = await import("./utils/nlpExtractor.js");
+            const extracted = extractLeadDetails(message.body);
+            
+            const extractedFields = Object.entries(extracted).filter(([k, v]) => v !== null);
+            if (extractedFields.length >= 2) {
+                const customer = customerForNlp;
+                if (customer) {
+                    const updates = {};
+                    if (extracted.name && !customer.name) updates.name = extracted.name;
+                    if (extracted.company && !customer.company) updates.company = extracted.company;
+                    if (extracted.email && !customer.email) updates.email = extracted.email;
+                    // Pre-fill phone if missing
+                    if (extracted.phone && !customer.phone) {
+                        updates.phone = extracted.phone;
+                    } else if (!customer.phone) {
+                        updates.phone = customerId.split("@")[0];
+                    }
+                    if (extracted.service && !customer.service) updates.service = extracted.service;
+
+                    if (Object.keys(updates).length > 0) {
+                        await updateCustomer(customerId, updates);
+                        console.log(`🤖 [NLP Extractor] Auto-extracted details for ${customerId}:`, updates);
+
+                        const updatedCustomer = await getCustomer(customerId);
+                        const isLead = updatedCustomer.name && updatedCustomer.company && updatedCustomer.email && updatedCustomer.phone;
+
+                        if (isLead) {
+                            await updateChatState(customerId, "COMPLETED");
+                            await updateCustomer(customerId, { status: "New Lead" });
+
+                            const NotificationModel = (await import("../models/Notification.js")).default;
+                            const notif = await NotificationModel.create({
+                                type: "NEW_LEAD",
+                                title: "New Qualified Lead (NLP Auto-extracted)",
+                                message: `Lead details auto-extracted for ${updatedCustomer.name} (${updatedCustomer.company}) interested in ${updatedCustomer.service || "Website Development"}.`,
+                                customerId
+                            });
+
+                            const { emitNotification } = await import("../sockets/emitter.js");
+                            emitNotification(notif);
+
+                            await message.reply(
+                                `🤖 *Majisa Lead Assistant*\n\nWelcome! I have automatically registered your details:\n👤 *Name:* ${updatedCustomer.name}\n🏢 *Company:* ${updatedCustomer.company}\n📧 *Email:* ${updatedCustomer.email}\n📱 *Phone:* ${updatedCustomer.phone}\n🛠️ *Service:* ${updatedCustomer.service || "Website Development"}\n\n✅ *Status:* Registered as New Qualified Lead.\n\nOne of our executives will contact you shortly. If you'd like to check our pricing model, feel free to reply with *menu* to explore!`
+                            );
+                            return;
+                        } else {
+                            const capturedList = Object.keys(updates).map(k => `*${k.charAt(0).toUpperCase() + k.slice(1)}*`).join(", ");
+                            await message.reply(
+                                `🤖 *Majisa Assistant*: I've noted down your ${capturedList}. Let's continue filling out the remaining details.`
+                            );
+                        }
+                    }
+                }
+            }
+        }
 
         // ==========================================
         // Global Commands
