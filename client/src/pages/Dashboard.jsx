@@ -11,6 +11,7 @@ export const Dashboard = () => {
         todaysLeads: 0,
         newLeads: 0,
         inProgressLeads: 0,
+        talkToExecutiveLeads: 0,
         todaysMessages: 0,
         activeChats: 0,
         completedProjects: 0,
@@ -156,6 +157,13 @@ export const Dashboard = () => {
                             <h3>{stats.inProgressLeads}</h3>
                         </div>
                         <div className="stat-icon" style={{ color: "var(--color-warning)" }}>⌛</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-info">
+                            <p>Talk to Executive</p>
+                            <h3>{stats.talkToExecutiveLeads || 0}</h3>
+                        </div>
+                        <div className="stat-icon" style={{ color: "var(--color-brand)" }}>📞</div>
                     </div>
                     <div className="stat-card">
                         <div className="stat-info">

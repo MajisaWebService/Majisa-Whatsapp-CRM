@@ -7,15 +7,18 @@ import {
     sendMediaMessage
 } from "../controllers/chat.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
+import { chatLimiter, uploadLimiter } from "../middleware/rateLimiter.middleware.js";
+import { mongoIdValidator } from "../validators/api.validator.js";
+import { validate } from "../middleware/validate.middleware.js";
 
 const router = express.Router();
 
 router.use(protect);
 
-router.get("/", getAllChats);
-router.get("/:customerId/messages", getChatMessages);
-router.post("/send", sendMessage);
-router.post("/upload", sendMediaMessage);
-router.patch("/:chatId/read", markAsRead);
+router.get("/", chatLimiter, getAllChats);
+router.get("/:customerId/messages", chatLimiter, getChatMessages);
+router.post("/send", chatLimiter, sendMessage);
+router.post("/upload", uploadLimiter, sendMediaMessage);
+router.patch("/:chatId/read", chatLimiter, markAsRead);
 
 export default router;

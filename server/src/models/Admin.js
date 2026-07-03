@@ -39,6 +39,14 @@ const adminSchema = new mongoose.Schema(
         resetPasswordExpire: {
             type: Date,
             default: null
+        },
+        passwordHistory: {
+            type: [String],
+            default: []
+        },
+        passwordChangedAt: {
+            type: Date,
+            default: Date.now
         }
     },
     {

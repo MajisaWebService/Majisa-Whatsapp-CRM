@@ -35,6 +35,15 @@ export const initializeSocket = (server) => {
                 return next(new Error("Authentication error. Account suspended."));
             }
 
+            // Verify session is active (not revoked)
+            if (decoded.sessionId) {
+                const AdminSession = (await import("../models/AdminSession.js")).default;
+                const session = await AdminSession.findById(decoded.sessionId);
+                if (!session || session.isRevoked) {
+                    return next(new Error("Authentication error. Session expired or revoked."));
+                }
+            }
+
             socket.admin = admin;
             next();
         } catch (error) {

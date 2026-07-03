@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { encrypt, decrypt } from "../utils/crypto.js";
 
 const settingsSchema = new mongoose.Schema(
     {
@@ -20,7 +21,7 @@ const settingsSchema = new mongoose.Schema(
         },
         gstDetails: {
             companyName: { type: String, default: "" },
-            gstNumber: { type: String, default: "" },
+            gstNumber: { type: String, default: "", get: decrypt, set: encrypt },
             address: { type: String, default: "" }
         },
         whatsappConfig: {
@@ -33,8 +34,8 @@ const settingsSchema = new mongoose.Schema(
         },
         paymentInfo: {
             bankName: { type: String, default: "" },
-            accountNumber: { type: String, default: "" },
-            ifscCode: { type: String, default: "" },
+            accountNumber: { type: String, default: "", get: decrypt, set: encrypt },
+            ifscCode: { type: String, default: "", get: decrypt, set: encrypt },
             upiId: { type: String, default: "" }
         },
         theme: {
@@ -52,7 +53,9 @@ const settingsSchema = new mongoose.Schema(
         }
     },
     {
-        timestamps: true
+        timestamps: true,
+        toJSON: { getters: true },
+        toObject: { getters: true }
     }
 );
 

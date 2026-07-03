@@ -6,18 +6,23 @@ import {
     deletePricingRule,
     togglePricingRuleActive
 } from "../controllers/pricing.controller.js";
-import { protect, authorize } from "../middleware/auth.middleware.js";
+import { protect } from "../middleware/auth.middleware.js";
+import { checkRole } from "../middleware/rbac.middleware.js";
+import { adminLimiter } from "../middleware/rateLimiter.middleware.js";
+import { pricingRuleValidator, mongoIdValidator } from "../validators/api.validator.js";
+import { validate } from "../middleware/validate.middleware.js";
 
 const router = express.Router();
 
 router.use(protect);
+router.use(adminLimiter);
 
 router.get("/", getAllPricingRules);
 
-// Creation, deletion, and toggle operations require write permissions (ADMIN or SUPER_ADMIN)
-router.post("/", authorize("SUPER_ADMIN", "ADMIN"), createPricingRule);
-router.put("/:id", authorize("SUPER_ADMIN", "ADMIN"), updatePricingRule);
-router.delete("/:id", authorize("SUPER_ADMIN", "ADMIN"), deletePricingRule);
-router.patch("/:id/toggle", authorize("SUPER_ADMIN", "ADMIN"), togglePricingRuleActive);
+// Read configurations is open to all logged in admins, write requires role validation
+router.post("/", checkRole("SUPER_ADMIN", "ADMIN"), pricingRuleValidator, validate, createPricingRule);
+router.put("/:id", mongoIdValidator, checkRole("SUPER_ADMIN", "ADMIN"), pricingRuleValidator, validate, updatePricingRule);
+router.delete("/:id", mongoIdValidator, validate, checkRole("SUPER_ADMIN"), deletePricingRule);
+router.patch("/:id/toggle", mongoIdValidator, validate, checkRole("SUPER_ADMIN", "ADMIN"), togglePricingRuleActive);
 
 export default router;

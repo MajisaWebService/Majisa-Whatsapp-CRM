@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
-import Admin from "../models/Admin.js";
+import AdminRepository from "../repositories/AdminRepository.js";
+import AdminSession from "../models/AdminSession.js";
 
-// Protect routes
+// Authenticate and verify active session
 export const protect = async (req, res, next) => {
     let token;
 
@@ -22,26 +23,41 @@ export const protect = async (req, res, next) => {
     }
 
     try {
-        // Verify token
+        // 1. Verify token signature and expiration
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Get admin from DB
-        req.admin = await Admin.findById(decoded.id).select("-password");
-
-        if (!req.admin) {
+        // 2. Fetch admin from DB and verify they are active
+        const admin = await AdminRepository.findById(decoded.id);
+        if (!admin) {
             return res.status(401).json({
                 success: false,
                 message: "User not found with this token."
             });
         }
 
-        if (!req.admin.isActive) {
+        if (!admin.isActive) {
             return res.status(401).json({
                 success: false,
-                message: "This admin account is suspended."
+                message: "This admin account has been deactivated."
             });
         }
 
+        // 3. Verify session validity if sessionId is present in token
+        if (decoded.sessionId) {
+            const session = await AdminSession.findById(decoded.sessionId);
+            if (!session || session.isRevoked) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Your session has expired or has been revoked."
+                });
+            }
+            
+            // Asynchronously touch last active timestamp
+            AdminSession.findByIdAndUpdate(session._id, { lastActiveAt: new Date() }).catch(console.error);
+            req.adminSession = session;
+        }
+
+        req.admin = admin;
         next();
     } catch (error) {
         console.error("JWT Verification Error:", error.message);
@@ -52,7 +68,7 @@ export const protect = async (req, res, next) => {
     }
 };
 
-// Authorize roles
+// Authorize roles (RBAC)
 export const authorize = (...roles) => {
     return (req, res, next) => {
         if (!req.admin || !roles.includes(req.admin.role)) {

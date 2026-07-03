@@ -1,95 +1,63 @@
-import Settings from "../models/Settings.js";
-import Admin from "../models/Admin.js";
-import Customer from "../models/Customer.js";
-import PricingRule from "../models/PricingRule.js";
-import Project from "../models/Project.js";
-import Notification from "../models/Notification.js";
-import ChatState from "../models/ChatState.js";
-import Message from "../models/Message.js";
-import Chat from "../models/Chat.js";
+import SettingsService from "../services/SettingsService.js";
+import AuditLogService from "../services/AuditLogService.js";
 
-// Fetch global settings (auto-creates default on first load)
-export const getSettings = async (req, res) => {
+// Fetch global settings
+export const getSettings = async (req, res, next) => {
     try {
-        let settings = await Settings.findOne();
-        if (!settings) {
-            settings = await Settings.create({});
-        }
+        const settings = await SettingsService.getSettings();
         return res.status(200).json({
             success: true,
             data: settings
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
 // Update global settings
-export const updateSettings = async (req, res) => {
+export const updateSettings = async (req, res, next) => {
     try {
-        let settings = await Settings.findOne();
-        if (!settings) {
-            settings = await Settings.create(req.body);
-        } else {
-            settings = await Settings.findByIdAndUpdate(settings._id, req.body, {
-                new: true,
-                runValidators: true
-            });
-        }
+        const adminId = req.admin._id;
+        const ipAddress = req.ip || "";
+        const settings = await SettingsService.updateSettings(req.body);
+
+        await AuditLogService.logAction(
+            adminId,
+            "SETTINGS_UPDATE",
+            { updatedFields: Object.keys(req.body) },
+            ipAddress
+        );
+
         return res.status(200).json({
             success: true,
             data: settings
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
 // Pack and dump database collections as JSON backup
-export const backupDatabase = async (req, res) => {
+export const backupDatabase = async (req, res, next) => {
     try {
-        const admins = await Admin.find().select("-password");
-        const customers = await Customer.find();
-        const pricingRules = await PricingRule.find();
-        const projects = await Project.find();
-        const notifications = await Notification.find();
-        const chatStates = await ChatState.find();
-        const messages = await Message.find();
-        const chats = await Chat.find();
+        const adminId = req.admin._id;
+        const adminEmail = req.admin.email;
+        const ipAddress = req.ip || "";
+        
+        const backupData = await SettingsService.backupDatabase(adminEmail);
 
-        const backupData = {
-            metadata: {
-                appName: "Majisa CRM",
-                timestamp: new Date().toISOString(),
-                exportedBy: req.admin.email
-            },
-            admins,
-            customers,
-            pricingRules,
-            projects,
-            notifications,
-            chatStates,
-            messages,
-            chats
-        };
+        await AuditLogService.logAction(
+            adminId,
+            "DB_BACKUP",
+            { file: "JSON export" },
+            ipAddress
+        );
 
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Content-Disposition", `attachment; filename=majisa_crm_backup_${Date.now()}.json`);
         return res.status(200).send(JSON.stringify(backupData, null, 2));
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: "Failed to create database backup: " + error.message
-        });
+        next(error);
     }
 };

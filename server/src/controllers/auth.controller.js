@@ -1,462 +1,245 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import Admin from "../models/Admin.js";
-import generateToken from "../utils/generateToken.js";
+import AuthService from "../services/AuthService.js";
+import AuditLogService from "../services/AuditLogService.js";
 
-// Helper to generate a refresh token
-const generateRefreshToken = (adminId) => {
-    return jwt.sign(
-        { id: adminId },
-        process.env.JWT_SECRET,
-        { expiresIn: "7d" }
-    );
-};
-
-export const registerAdmin = async (req, res) => {
+export const registerAdmin = async (req, res, next) => {
     try {
-        const { name, email, password, role } = req.body;
-
-        // Check required fields
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "All fields are required."
-            });
-        }
-
-        // Check if email already exists
-        const existingAdmin = await Admin.findOne({ email });
-
-        if (existingAdmin) {
-            return res.status(409).json({
-                success: false,
-                message: "Admin already exists."
-            });
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Save admin
-        const admin = await Admin.create({
-            name,
-            email,
-            password: hashedPassword,
-            role: role || "ADMIN"
-        });
+        const result = await AuthService.registerAdmin(req.body);
+        
+        // Log action
+        const executorId = req.admin?._id || result.id; // handle initial seed registration
+        await AuditLogService.logAction(
+            executorId,
+            "ADMIN_REGISTER",
+            { adminId: result.id, email: result.email },
+            req.ip
+        );
 
         return res.status(201).json({
             success: true,
             message: "Admin registered successfully.",
-            data: {
-                id: admin._id,
-                name: admin.name,
-                email: admin.email,
-                role: admin.role
-            }
+            data: result
         });
-
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error"
-        });
+        next(error);
     }
 };
 
-export const loginAdmin = async (req, res) => {
+export const loginAdmin = async (req, res, next) => {
     try {
         const { email, password } = req.body;
+        const ipAddress = req.ip || "";
+        const userAgent = req.headers["user-agent"] || "";
 
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and Password are required."
-            });
-        }
+        const result = await AuthService.loginAdmin(email, password, ipAddress, userAgent);
 
-        const admin = await Admin.findOne({ email });
-
-        if (!admin) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid Credentials"
-            });
-        }
-
-        if (!admin.isActive) {
-            return res.status(403).json({
-                success: false,
-                message: "This account has been deactivated."
-            });
-        }
-
-        const isPasswordCorrect = await bcrypt.compare(
-            password,
-            admin.password
+        await AuditLogService.logAction(
+            result.admin.id,
+            "LOGIN",
+            { email },
+            ipAddress
         );
-
-        if (!isPasswordCorrect) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid Credentials"
-            });
-        }
-
-        const token = generateToken(admin._id);
-        const refreshToken = generateRefreshToken(admin._id);
 
         return res.status(200).json({
             success: true,
             message: "Login Successful",
-            token,
-            refreshToken,
-            admin: {
-                id: admin._id,
-                name: admin.name,
-                email: admin.email,
-                role: admin.role
-            }
+            token: result.token,
+            refreshToken: result.refreshToken,
+            admin: result.admin
         });
-
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
-export const getMe = async (req, res) => {
-    try {
-        return res.status(200).json({
-            success: true,
-            data: {
-                id: req.admin._id,
-                name: req.admin.name,
-                email: req.admin.email,
-                role: req.admin.role,
-                isActive: req.admin.isActive
-            }
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-export const getAllAdmins = async (req, res) => {
-    try {
-        const admins = await Admin.find().select("-password");
-        return res.status(200).json({
-            success: true,
-            data: admins
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-};
-
-// 1. Refresh Token support
-export const refreshSessionToken = async (req, res) => {
+export const logoutAdmin = async (req, res, next) => {
     try {
         const { refreshToken } = req.body;
-
-        if (!refreshToken) {
-            return res.status(400).json({
-                success: false,
-                message: "Refresh token is required."
-            });
+        if (refreshToken) {
+            await AuthService.logoutAdmin(refreshToken);
         }
-
-        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-        const admin = await Admin.findById(decoded.id);
-
-        if (!admin || !admin.isActive) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid session or account deactivated."
-            });
+        
+        if (req.admin) {
+            await AuditLogService.logAction(req.admin._id, "LOGOUT", {}, req.ip);
         }
-
-        const newToken = generateToken(admin._id);
-        const newRefreshToken = generateRefreshToken(admin._id);
 
         return res.status(200).json({
             success: true,
-            token: newToken,
-            refreshToken: newRefreshToken
+            message: "Logged out successfully."
         });
     } catch (error) {
-        console.error("Refresh token error:", error.message);
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired session token."
-        });
+        next(error);
     }
 };
 
-// 2. Forgot Password support
-export const forgotPassword = async (req, res) => {
+export const getMe = async (req, res, next) => {
     try {
-        const { email } = req.body;
+        const result = await AuthService.getMe(req.admin._id);
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                message: "Email is required."
-            });
-        }
+export const getAllAdmins = async (req, res, next) => {
+    try {
+        const result = await AuthService.getAllAdmins();
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
-        const admin = await Admin.findOne({ email });
+export const refreshSessionToken = async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+        const ipAddress = req.ip || "";
+        const userAgent = req.headers["user-agent"] || "";
 
-        if (!admin) {
-            // Standard security practice: do not leak whether account exists or not
-            return res.status(200).json({
-                success: true,
-                message: "If email exists in our records, a reset code was sent."
-            });
-        }
+        const result = await AuthService.refreshSessionToken(refreshToken, ipAddress, userAgent);
+        return res.status(200).json({
+            success: true,
+            token: result.token,
+            refreshToken: result.refreshToken
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
-        // Generate 6-digit random code
-        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        admin.resetPasswordToken = resetCode;
-        admin.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
-        await admin.save();
-
-        // Print reset code in logs (since no email service is hooked up)
-        console.log("\n==========================================");
-        console.log(`🔑 PASSWORD RESET CODE FOR: ${email}`);
-        console.log(`CODE: ${resetCode}`);
-        console.log("==========================================\n");
-
+export const forgotPassword = async (req, res, next) => {
+    try {
+        await AuthService.forgotPassword(req.body.email);
         return res.status(200).json({
             success: true,
             message: "If email exists in our records, a reset code was sent."
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
-// 3. Reset Password support
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res, next) => {
     try {
-        const { email, resetCode, newPassword } = req.body;
-
-        if (!email || !resetCode || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "All fields are required."
-            });
-        }
-
-        const admin = await Admin.findOne({
-            email,
-            resetPasswordToken: resetCode,
-            resetPasswordExpire: { $gt: Date.now() }
-        });
-
-        if (!admin) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid or expired password reset code."
-            });
-        }
-
-        // Hash new password
-        admin.password = await bcrypt.hash(newPassword, 10);
-        admin.resetPasswordToken = null;
-        admin.resetPasswordExpire = null;
-        await admin.save();
-
+        await AuthService.resetPassword(req.body);
         return res.status(200).json({
             success: true,
             message: "Password reset successful. You can now login with your new password."
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
-// 4. Change Password support
-export const changePassword = async (req, res) => {
+export const changePassword = async (req, res, next) => {
     try {
         const { oldPassword, newPassword } = req.body;
-        const adminId = req.admin._id;
-
-        if (!oldPassword || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Old and New Passwords are required."
-            });
-        }
-
-        const admin = await Admin.findById(adminId);
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: "Admin not found."
-            });
-        }
-
-        const isPasswordCorrect = await bcrypt.compare(oldPassword, admin.password);
-        if (!isPasswordCorrect) {
-            return res.status(400).json({
-                success: false,
-                message: "Incorrect old password."
-            });
-        }
-
-        admin.password = await bcrypt.hash(newPassword, 10);
-        await admin.save();
+        await AuthService.changePassword(req.admin._id, oldPassword, newPassword);
+        
+        await AuditLogService.logAction(req.admin._id, "CHANGE_PASSWORD", {}, req.ip);
 
         return res.status(200).json({
             success: true,
             message: "Password updated successfully."
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
-// 5. Admin management CRUD endpoints
-export const updateAdminStatus = async (req, res) => {
+export const updateAdminStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { isActive } = req.body;
+        const result = await AuthService.updateAdminStatus(req.admin, id, isActive);
 
-        if (req.admin._id.toString() === id) {
-            return res.status(400).json({
-                success: false,
-                message: "You cannot deactivate or activate your own account."
-            });
-        }
-
-        const admin = await Admin.findByIdAndUpdate(
-            id,
-            { isActive },
-            { new: true }
-        ).select("-password");
-
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: "Admin account not found."
-            });
-        }
+        await AuditLogService.logAction(
+            req.admin._id,
+            isActive ? "ADMIN_ACTIVATE" : "ADMIN_DEACTIVATE",
+            { adminId: id, email: result.email },
+            req.ip
+        );
 
         return res.status(200).json({
             success: true,
             message: `Admin account has been ${isActive ? "activated" : "deactivated"}.`,
-            data: admin
+            data: result
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
-export const updateAdminRole = async (req, res) => {
+export const updateAdminRole = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { role } = req.body;
+        const result = await AuthService.updateAdminRole(req.admin, id, role);
 
-        if (req.admin._id.toString() === id) {
-            return res.status(400).json({
-                success: false,
-                message: "You cannot change your own role."
-            });
-        }
-
-        if (!["SUPER_ADMIN", "ADMIN"].includes(role)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid role value."
-            });
-        }
-
-        const admin = await Admin.findByIdAndUpdate(
-            id,
-            { role },
-            { new: true }
-        ).select("-password");
-
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: "Admin account not found."
-            });
-        }
+        await AuditLogService.logAction(
+            req.admin._id,
+            "ADMIN_ROLE_CHANGE",
+            { adminId: id, role, email: result.email },
+            req.ip
+        );
 
         return res.status(200).json({
             success: true,
             message: `Admin role updated to ${role}.`,
-            data: admin
+            data: result
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
     }
 };
 
-export const deleteAdmin = async (req, res) => {
+export const deleteAdmin = async (req, res, next) => {
     try {
         const { id } = req.params;
+        await AuthService.deleteAdmin(req.admin, id);
 
-        if (req.admin._id.toString() === id) {
-            return res.status(400).json({
-                success: false,
-                message: "You cannot delete your own account."
-            });
-        }
-
-        const admin = await Admin.findByIdAndDelete(id);
-
-        if (!admin) {
-            return res.status(404).json({
-                success: false,
-                message: "Admin account not found."
-            });
-        }
+        await AuditLogService.logAction(
+            req.admin._id,
+            "ADMIN_DELETE",
+            { adminId: id },
+            req.ip
+        );
 
         return res.status(200).json({
             success: true,
             message: "Admin account deleted successfully."
         });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: error.message
+        next(error);
+    }
+};
+
+export const getActiveSessions = async (req, res, next) => {
+    try {
+        const sessions = await AuthService.getActiveSessions(req.admin._id);
+        return res.status(200).json({
+            success: true,
+            data: sessions
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const revokeSession = async (req, res, next) => {
+    try {
+        const { sessionId } = req.params;
+        await AuthService.revokeSession(req.admin._id, sessionId);
+        return res.status(200).json({
+            success: true,
+            message: "Session revoked successfully."
+        });
+    } catch (error) {
+        next(error);
     }
 };

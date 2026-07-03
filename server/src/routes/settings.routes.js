@@ -4,14 +4,17 @@ import {
     updateSettings,
     backupDatabase
 } from "../controllers/settings.controller.js";
-import { protect, authorize } from "../middleware/auth.middleware.js";
+import { protect } from "../middleware/auth.middleware.js";
+import { checkRole } from "../middleware/rbac.middleware.js";
+import { adminLimiter } from "../middleware/rateLimiter.middleware.js";
 
 const router = express.Router();
 
 router.use(protect);
+router.use(adminLimiter);
 
 router.get("/", getSettings);
-router.put("/", authorize("SUPER_ADMIN", "ADMIN"), updateSettings);
-router.post("/backup", authorize("SUPER_ADMIN"), backupDatabase);
+router.put("/", checkRole("SUPER_ADMIN", "ADMIN"), updateSettings);
+router.post("/backup", checkRole("SUPER_ADMIN"), backupDatabase);
 
 export default router;

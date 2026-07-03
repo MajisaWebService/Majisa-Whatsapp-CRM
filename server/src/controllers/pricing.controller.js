@@ -1,73 +1,69 @@
-import PricingRule from "../models/PricingRule.js";
+import PricingService from "../services/PricingService.js";
 import { invalidatePricingCache } from "../chatbot/config/pricing.config.js";
 
-// Get all pricing rules (with category filtering)
-export const getAllPricingRules = async (req, res) => {
+// Get all pricing rules (with optional active filtering)
+export const getAllPricingRules = async (req, res, next) => {
     try {
-        const query = {};
-        if (req.query.category) query.category = req.query.category;
-
-        const rules = await PricingRule.find(query).sort({ category: 1, sortOrder: 1 });
+        const activeOnly = req.query.activeOnly === "true";
+        const rules = await PricingService.getRules(activeOnly);
         return res.status(200).json({ success: true, data: rules });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Create a new pricing rule
-export const createPricingRule = async (req, res) => {
+export const createPricingRule = async (req, res, next) => {
     try {
-        const rule = await PricingRule.create(req.body);
+        const adminId = req.admin._id;
+        const ipAddress = req.ip || "";
+        const rule = await PricingService.createRule(req.body, adminId, ipAddress);
+        
         invalidatePricingCache();
         return res.status(201).json({ success: true, data: rule });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Update an existing pricing rule
-export const updatePricingRule = async (req, res) => {
+export const updatePricingRule = async (req, res, next) => {
     try {
-        const rule = await PricingRule.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
-        if (!rule) {
-            return res.status(404).json({ success: false, message: "Pricing rule not found." });
-        }
+        const adminId = req.admin._id;
+        const ipAddress = req.ip || "";
+        const rule = await PricingService.updateRule(req.params.id, req.body, adminId, ipAddress);
+        
         invalidatePricingCache();
         return res.status(200).json({ success: true, data: rule });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Delete a pricing rule
-export const deletePricingRule = async (req, res) => {
+export const deletePricingRule = async (req, res, next) => {
     try {
-        const rule = await PricingRule.findByIdAndDelete(req.params.id);
-        if (!rule) {
-            return res.status(404).json({ success: false, message: "Pricing rule not found." });
-        }
+        const adminId = req.admin._id;
+        const ipAddress = req.ip || "";
+        await PricingService.deleteRule(req.params.id, adminId, ipAddress);
+        
         invalidatePricingCache();
         return res.status(200).json({ success: true, message: "Pricing rule deleted successfully." });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Toggle active status
-export const togglePricingRuleActive = async (req, res) => {
+export const togglePricingRuleActive = async (req, res, next) => {
     try {
-        const rule = await PricingRule.findById(req.params.id);
-        if (!rule) {
-            return res.status(404).json({ success: false, message: "Pricing rule not found." });
-        }
-        rule.isActive = !rule.isActive;
-        await rule.save();
+        const adminId = req.admin._id;
+        const ipAddress = req.ip || "";
+        const rule = await PricingService.toggleRuleActive(req.params.id, adminId, ipAddress);
+        
         invalidatePricingCache();
         return res.status(200).json({ success: true, data: rule });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };

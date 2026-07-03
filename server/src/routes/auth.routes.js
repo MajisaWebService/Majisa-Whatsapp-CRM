@@ -10,7 +10,10 @@ import {
     changePassword,
     updateAdminStatus,
     updateAdminRole,
-    deleteAdmin
+    deleteAdmin,
+    logoutAdmin,
+    getActiveSessions,
+    revokeSession
 } from "../controllers/auth.controller.js";
 import { registerValidator, loginValidator } from "../validators/auth.validator.js";
 import { validate } from "../middleware/validate.middleware.js";
@@ -21,6 +24,7 @@ const router = express.Router();
 
 router.post("/register", authLimiter, registerValidator, validate, registerAdmin);
 router.post("/login", authLimiter, loginValidator, validate, loginAdmin);
+router.post("/logout", protect, logoutAdmin);
 router.post("/refresh-token", refreshSessionToken);
 router.post("/forgot-password", authLimiter, forgotPassword);
 router.post("/reset-password", authLimiter, resetPassword);
@@ -28,6 +32,8 @@ router.post("/reset-password", authLimiter, resetPassword);
 // Protected routes
 router.get("/me", protect, getMe);
 router.put("/change-password", protect, changePassword);
+router.get("/sessions", protect, getActiveSessions);
+router.delete("/sessions/:sessionId", protect, revokeSession);
 
 // Administrative routes (Super Admin only)
 router.get("/admins", protect, authorize("SUPER_ADMIN"), getAllAdmins);

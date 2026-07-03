@@ -1,67 +1,54 @@
-import Notification from "../models/Notification.js";
+import NotificationService from "../services/NotificationService.js";
 
 // Fetch paginated admin notifications
-export const getNotifications = async (req, res) => {
+export const getNotifications = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 15;
-        const skip = (page - 1) * limit;
 
-        const notifications = await Notification.find()
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        const total = await Notification.countDocuments();
+        const result = await NotificationService.getNotifications(page, limit);
 
         return res.status(200).json({
             success: true,
-            data: notifications,
+            data: result.items,
             pagination: {
-                total,
+                total: result.total,
                 page,
                 limit,
-                pages: Math.ceil(total / limit)
+                pages: Math.ceil(result.total / limit)
             }
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Mark single notification as read
-export const markAsRead = async (req, res) => {
+export const markAsRead = async (req, res, next) => {
     try {
-        const notification = await Notification.findByIdAndUpdate(
-            req.params.id,
-            { isRead: true },
-            { new: true }
-        );
-        if (!notification) {
-            return res.status(404).json({ success: false, message: "Notification not found." });
-        }
+        const notification = await NotificationService.markAsRead(req.params.id);
         return res.status(200).json({ success: true, data: notification });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Mark all unread notifications as read
-export const markAllAsRead = async (req, res) => {
+export const markAllAsRead = async (req, res, next) => {
     try {
-        await Notification.updateMany({ isRead: false }, { isRead: true });
+        await NotificationService.markAllAsRead();
         return res.status(200).json({ success: true, message: "All notifications marked as read." });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 // Count unread notifications
-export const getUnreadCount = async (req, res) => {
+export const getUnreadCount = async (req, res, next) => {
     try {
-        const count = await Notification.countDocuments({ isRead: false });
+        const count = await NotificationService.getUnreadCount();
         return res.status(200).json({ success: true, count });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        next(error);
     }
 };
