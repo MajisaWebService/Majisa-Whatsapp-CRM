@@ -1,13 +1,16 @@
-// src/chatbot/services/quotation.service.js
-
 import Quotation from "../../models/Quotation.js";
-import { SERVICES, PAGE_RANGES, FEATURES } from "../config/pricing.config.js";
+import Notification from "../../models/Notification.js";
+import { getServices, getPageRanges, getFeatures } from "../config/pricing.config.js";
+import { emitNotification } from "../../sockets/emitter.js";
 
 // ==========================================
 // Calculate Quotation from ChatState data
 // ==========================================
 
-export const calculateQuotation = (chatState) => {
+export const calculateQuotation = async (chatState) => {
+    const SERVICES = await getServices();
+    const PAGE_RANGES = await getPageRanges();
+    const FEATURES = await getFeatures();
 
     const serviceKey = chatState.serviceKey;
     const service = SERVICES[serviceKey];
@@ -90,7 +93,9 @@ export const calculateQuotation = (chatState) => {
 // Build Quotation Display Text
 // ==========================================
 
-export const buildQuotationText = (chatState, quotationData) => {
+export const buildQuotationText = async (chatState, quotationData) => {
+    const SERVICES = await getServices();
+    const FEATURES = await getFeatures();
 
     const { totalAmount, breakdown } = quotationData;
 
@@ -141,9 +146,8 @@ export const buildQuotationText = (chatState, quotationData) => {
     text += `*Estimated Total: ₹${totalAmount.toLocaleString("en-IN")}*\n`;
     text += `--------------------\n\n`;
 
-    text += `Would you like to receive a PDF quotation?\n\n`;
-    text += `1️⃣ Yes, Send PDF\n`;
-    text += `2️⃣ Talk to Executive`;
+    text += `Would you like to talk to an executive to proceed?\n\n`;
+    text += `1️⃣ Talk to Executive`;
 
     return text;
 };
@@ -153,6 +157,8 @@ export const buildQuotationText = (chatState, quotationData) => {
 // ==========================================
 
 export const saveQuotation = async (customerId, chatState, quotationData) => {
+    const SERVICES = await getServices();
+    const FEATURES = await getFeatures();
 
     const service = SERVICES[chatState.serviceKey];
     const subTypeKey = chatState.data?.subTypeKey;
@@ -173,6 +179,18 @@ export const saveQuotation = async (customerId, chatState, quotationData) => {
     });
 
     console.log("✅ Quotation Saved:", quotation._id);
+
+    try {
+        const notif = await Notification.create({
+            type: "QUOTATION_GENERATED",
+            title: "Quotation Generated",
+            message: `Quotation for ${chatState.data?.name || customerId} has been generated. Total: ₹${quotation.totalAmount.toLocaleString("en-IN")}`,
+            customerId
+        });
+        emitNotification(notif);
+    } catch (err) {
+        console.error("Failed to create quotation notification:", err.message);
+    }
 
     return quotation;
 };

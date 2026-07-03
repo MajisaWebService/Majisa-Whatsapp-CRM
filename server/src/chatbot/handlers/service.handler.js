@@ -1,18 +1,18 @@
 // src/chatbot/handlers/service.handler.js
 
 import { updateChatState, getChatState } from "../stateManager.js";
-import { updateCustomer, getCustomer } from "../services/customer.service.js";
+import { updateCustomer } from "../services/customer.service.js";
+import Notification from "../../models/Notification.js";
+import { emitNotification } from "../../sockets/emitter.js";
 import {
     calculateQuotation,
     buildQuotationText,
     saveQuotation
 } from "../services/quotation.service.js";
-import { generateQuotationPDF } from "../services/pdf.service.js";
-import { sendPdfToCustomer } from "../../services/whatsapp.service.js";
 import {
-    SERVICES,
-    PAGE_RANGES,
-    FEATURES,
+    getServices,
+    getPageRanges,
+    getFeatures,
     getSubTypeMenu,
     getPageRangeMenu,
     getFeaturesMenu
@@ -23,6 +23,9 @@ import {
 // ==========================================
 
 export const handleServiceFlow = async (message, chatState) => {
+    const SERVICES = await getServices();
+    const PAGE_RANGES = await getPageRanges();
+    const FEATURES = await getFeatures();
 
     const customerId = message.from;
     const text = message.body.trim().toLowerCase();
@@ -65,7 +68,7 @@ export const handleServiceFlow = async (message, chatState) => {
                 await updateChatState(customerId, "SELECT_PAGES");
 
                 return await message.reply(
-                    `${getPageRangeMenu()}\n\n_⬅️ Type *0* to go back_`
+                    `${await getPageRangeMenu()}\n\n_⬅️ Type *0* to go back_`
                 );
 
             } else if (service.hasFeatures) {
@@ -73,7 +76,7 @@ export const handleServiceFlow = async (message, chatState) => {
                 await updateChatState(customerId, "SELECT_FEATURES");
 
                 return await message.reply(
-                    `${getFeaturesMenu()}\n\n_⬅️ Type *0* to go back_`
+                    `${await getFeaturesMenu()}\n\n_⬅️ Type *0* to go back_`
                 );
 
             } else {
@@ -82,8 +85,8 @@ export const handleServiceFlow = async (message, chatState) => {
                 await updateChatState(customerId, "SHOW_QUOTATION");
 
                 const latestState = await getChatState(customerId);
-                const quotationData = calculateQuotation(latestState);
-                const quotationText = buildQuotationText(latestState, quotationData);
+                const quotationData = await calculateQuotation(latestState);
+                const quotationText = await buildQuotationText(latestState, quotationData);
 
                 return await message.reply(
                     `${quotationText}\n\n_⬅️ Type *0* to go back_`
@@ -118,7 +121,7 @@ export const handleServiceFlow = async (message, chatState) => {
                 await updateChatState(customerId, "SELECT_FEATURES");
 
                 return await message.reply(
-                    `${getFeaturesMenu()}\n\n_⬅️ Type *0* to go back_`
+                    `${await getFeaturesMenu()}\n\n_⬅️ Type *0* to go back_`
                 );
 
             } else {
@@ -126,8 +129,8 @@ export const handleServiceFlow = async (message, chatState) => {
                 await updateChatState(customerId, "SHOW_QUOTATION");
 
                 const latestState = await getChatState(customerId);
-                const quotationData = calculateQuotation(latestState);
-                const quotationText = buildQuotationText(latestState, quotationData);
+                const quotationData = await calculateQuotation(latestState);
+                const quotationText = await buildQuotationText(latestState, quotationData);
 
                 return await message.reply(
                     `${quotationText}\n\n_⬅️ Type *0* to go back_`
@@ -151,8 +154,8 @@ export const handleServiceFlow = async (message, chatState) => {
                 });
 
                 const latestState = await getChatState(customerId);
-                const quotationData = calculateQuotation(latestState);
-                const quotationText = buildQuotationText(latestState, quotationData);
+                const quotationData = await calculateQuotation(latestState);
+                const quotationText = await buildQuotationText(latestState, quotationData);
 
                 return await message.reply(
                     `${quotationText}\n\n_⬅️ Type *0* to go back_`
@@ -187,8 +190,8 @@ export const handleServiceFlow = async (message, chatState) => {
             });
 
             const latestState = await getChatState(customerId);
-            const quotationData = calculateQuotation(latestState);
-            const quotationText = buildQuotationText(latestState, quotationData);
+            const quotationData = await calculateQuotation(latestState);
+            const quotationText = await buildQuotationText(latestState, quotationData);
 
             return await message.reply(
                 `${quotationText}\n\n_⬅️ Type *0* to go back_`
@@ -201,15 +204,13 @@ export const handleServiceFlow = async (message, chatState) => {
 
         case "SHOW_QUOTATION": {
 
-            if (text === "1" || text === "yes") {
-
-                await message.reply("📄 Generating your quotation PDF...");
+            if (text === "1" || text === "yes" || text.includes("talk") || text.includes("exec")) {
 
                 const latestState = await getChatState(customerId);
-                const quotationData = calculateQuotation(latestState);
+                const quotationData = await calculateQuotation(latestState);
 
                 // Save quotation to DB
-                const quotation = await saveQuotation(customerId, latestState, quotationData);
+                await saveQuotation(customerId, latestState, quotationData);
 
                 // Collect feature names
                 const featureKeys = latestState.data?.selectedFeatureKeys || [];
@@ -221,51 +222,22 @@ export const handleServiceFlow = async (message, chatState) => {
                 await updateCustomer(customerId, {
                     service: latestState.service,
                     features: featureNames,
-                    quotationSent: true,
-                    status: "Quotation Sent"
-                });
-
-                // Generate PDF
-                const customer = await getCustomer(customerId);
-
-                const pdfPath = await generateQuotationPDF(
-                    customer,
-                    latestState,
-                    quotationData,
-                    quotation._id.toString()
-                );
-
-                // Update quotation with PDF path
-                quotation.pdfPath = pdfPath;
-                quotation.status = "SENT";
-                await quotation.save();
-
-                // Send PDF on WhatsApp
-                await sendPdfToCustomer(
-                    customerId,
-                    pdfPath,
-                    `📋 Your Quotation from Majisa Web Solutions\n\nTotal: ₹${quotationData.totalAmount.toLocaleString("en-IN")}`
-                );
-
-                await updateChatState(customerId, "COMPLETED");
-
-                return await message.reply(
-                    `✅ *Quotation Sent Successfully!*
-
-Thank you for choosing *Majisa Web Solutions*.
-
-Our team will review your requirements and contact you shortly.
-
-Type *Hi* to start a new inquiry.`
-                );
-
-            } else if (text === "2") {
-
-                await updateChatState(customerId, "COMPLETED");
-
-                await updateCustomer(customerId, {
                     status: "Talk to Executive"
                 });
+
+                try {
+                    const notif = await Notification.create({
+                        type: "EXECUTIVE_REQUESTED",
+                        title: "Executive Requested",
+                        message: `${latestState.data?.name || customerId} has requested to speak with an executive.`,
+                        customerId
+                    });
+                    emitNotification(notif);
+                } catch (err) {
+                    console.error("Failed to create executive requested notification:", err.message);
+                }
+
+                await updateChatState(customerId, "COMPLETED");
 
                 return await message.reply(
                     `👨‍💼 Thank you for contacting *Majisa Web Solutions*.
@@ -278,7 +250,7 @@ One of our executives will contact you shortly.
             } else {
 
                 return await message.reply(
-                    `❌ Please choose:\n\n1️⃣ Yes, Send PDF\n2️⃣ Talk to Executive\n\n_⬅️ Type *0* to go back_`
+                    `❌ Please choose:\n\n1️⃣ Talk to Executive\n\n_⬅️ Type *0* to go back_`
                 );
             }
         }

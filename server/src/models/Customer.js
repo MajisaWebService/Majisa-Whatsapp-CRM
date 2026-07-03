@@ -73,11 +73,6 @@ const customerSchema = new mongoose.Schema(
             default: false
         },
 
-        paymentStatus: {
-            type: String,
-            default: "Pending"
-        },
-
         assignedTo: {
             type: String,
             default: ""
@@ -86,12 +81,25 @@ const customerSchema = new mongoose.Schema(
         notes: {
             type: String,
             default: ""
+        },
+        isBotPaused: {
+            type: Boolean,
+            default: false
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false
         }
-
     },
     {
         timestamps: true
     }
 );
+
+customerSchema.index({ customerId: 1 });
+customerSchema.index({ phone: 1 });
+customerSchema.index({ status: 1 });
+customerSchema.index({ assignedTo: 1 });
+customerSchema.index({ isDeleted: 1 });
 
 export default mongoose.model("Customer", customerSchema);

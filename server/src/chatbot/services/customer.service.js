@@ -1,4 +1,6 @@
 import Customer from "../../models/Customer.js";
+import Notification from "../../models/Notification.js";
+import { emitCustomerUpdated, emitNewCustomer, emitNotification } from "../../sockets/emitter.js";
 
 // Create Customer
 export const createCustomer = async (customerId) => {
@@ -12,6 +14,19 @@ export const createCustomer = async (customerId) => {
         });
 
         console.log("✅ Customer Created");
+        emitNewCustomer(customer);
+
+        try {
+            const notif = await Notification.create({
+                type: "NEW_LEAD",
+                title: "New Lead",
+                message: `New chat conversation started with ${customerId}.`,
+                customerId
+            });
+            emitNotification(notif);
+        } catch (err) {
+            console.error("Failed to create new lead notification:", err.message);
+        }
     }
 
     return customer;
@@ -32,7 +47,9 @@ export const updateCustomer = async (customerId, updateData) => {
     );
 
     console.log("✅ Customer Updated");
-    console.log(customer);
+    if (customer) {
+        emitCustomerUpdated(customer);
+    }
 
     return customer;
 };

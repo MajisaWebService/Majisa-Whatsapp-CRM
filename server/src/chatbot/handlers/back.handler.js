@@ -3,7 +3,7 @@
 import { updateChatState, getChatState } from "../stateManager.js";
 import { showMainMenu } from "../menuHandler.js";
 import {
-    SERVICES,
+    getServices,
     getSubTypeMenu,
     getPageRangeMenu,
     getFeaturesMenu
@@ -16,7 +16,7 @@ import {
 // so the caller can stop further processing.
 
 export const handleBack = async (message, chatState) => {
-
+    const SERVICES = await getServices();
     const customerId = message.from;
     const state = chatState.state;
     const serviceKey = chatState.serviceKey;
@@ -92,7 +92,7 @@ export const handleBack = async (message, chatState) => {
             await updateChatState(customerId, "SELECT_SUB_TYPE");
 
             if (service && service.subTypes) {
-                await message.reply(getSubTypeMenu(serviceKey));
+                await message.reply(await getSubTypeMenu(serviceKey));
             }
 
             return true;
@@ -103,14 +103,14 @@ export const handleBack = async (message, chatState) => {
             if (service && service.hasPages) {
 
                 await updateChatState(customerId, "SELECT_PAGES");
-                await message.reply(getPageRangeMenu());
+                await message.reply(await getPageRangeMenu());
 
             } else {
 
                 await updateChatState(customerId, "SELECT_SUB_TYPE");
 
                 if (service && service.subTypes) {
-                    await message.reply(getSubTypeMenu(serviceKey));
+                    await message.reply(await getSubTypeMenu(serviceKey));
                 }
             }
 
@@ -122,19 +122,19 @@ export const handleBack = async (message, chatState) => {
             if (service && service.hasFeatures) {
 
                 await updateChatState(customerId, "SELECT_FEATURES");
-                await message.reply(getFeaturesMenu());
+                await message.reply(await getFeaturesMenu());
 
             } else if (service && service.hasPages) {
 
                 await updateChatState(customerId, "SELECT_PAGES");
-                await message.reply(getPageRangeMenu());
+                await message.reply(await getPageRangeMenu());
 
             } else {
 
                 await updateChatState(customerId, "SELECT_SUB_TYPE");
 
                 if (service && service.subTypes) {
-                    await message.reply(getSubTypeMenu(serviceKey));
+                    await message.reply(await getSubTypeMenu(serviceKey));
                 }
             }
 

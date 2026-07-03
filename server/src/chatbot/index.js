@@ -9,7 +9,7 @@ import {
     createCustomer,
     updateCustomer
 } from "./services/customer.service.js";
-import { SERVICES } from "./config/pricing.config.js";
+import { getServices } from "./config/pricing.config.js";
 
 // States where "0" means back (not skip features)
 const BACK_ENABLED_STATES = [
@@ -119,6 +119,7 @@ One of our executives will contact you shortly.
                 }
 
                 // Options 1–9 — Service Selection
+                const SERVICES = await getServices();
                 const service = SERVICES[text];
 
                 if (!service) {

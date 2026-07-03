@@ -56,7 +56,24 @@ const quotationSchema = new mongoose.Schema(
             required: true
         },
 
-        pdfPath: {
+        discount: {
+            type: Number,
+            default: 0
+        },
+
+        tax: {
+            type: Number,
+            default: 0 // GST percentage (e.g. 18)
+        },
+
+        additionalCharges: [
+            {
+                name: String,
+                amount: Number
+            }
+        ],
+
+        notes: {
             type: String,
             default: ""
         },

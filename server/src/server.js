@@ -1,9 +1,11 @@
 // src/server.js
 
 import dotenv from "dotenv";
+import http from "http";
 import app from "./app.js";
 import connectDB from "./config/database.js";
 import { initializeWhatsApp, closeWhatsApp } from "./services/whatsapp.service.js";
+import { initializeSocket } from "./sockets/socketManager.js";
 
 // Load Environment Variables
 dotenv.config();
@@ -13,8 +15,14 @@ await connectDB();
 
 const PORT = process.env.PORT || 5000;
 
-// Start Express Server
-const server = app.listen(PORT, async () => {
+// Create HTTP Server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initializeSocket(server);
+
+// Start HTTP Server
+server.listen(PORT, async () => {
     console.log(`🚀 Server running on port ${PORT}`);
 
     // Initialize WhatsApp
@@ -43,3 +51,4 @@ const handleShutdown = async (signal) => {
 
 process.on("SIGINT", () => handleShutdown("SIGINT"));
 process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+// Force Nodemon restart: 1
