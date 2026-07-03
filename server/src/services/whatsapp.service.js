@@ -221,13 +221,10 @@ client.on("message_create", async (message) => {
             emitNewMessage(savedMessage);
 
             // Pass to chatbot state machine if not paused by administrator.
-            // We always process messages if the customer profile details are still incomplete, allowing the NLP extractor to capture them.
-            const isIncompleteProfile = !customer.name || !customer.company || !customer.email || !customer.phone;
-
-            if (!customer.isBotPaused && (isIncompleteProfile || !["In Progress", "Talk to Executive", "Completed"].includes(customer.status))) {
+            if (!customer.isBotPaused) {
                 await handleIncomingMessage(message);
             } else {
-                console.log(`🤖 Chatbot bypassed for customer: ${customer.name || customer.customerId} (Bot paused or executive in active conversation).`);
+                console.log(`🤖 Chatbot bypassed for customer: ${customer.name || customer.customerId} (Bot paused by administrator).`);
             }
         }
 
