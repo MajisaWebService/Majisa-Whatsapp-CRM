@@ -17,7 +17,7 @@ class ChatRepository {
     }
 
     async updateChat(id, updateData) {
-        return Chat.findByIdAndUpdate(id, updateData, { new: true }).populate("customer");
+        return Chat.findByIdAndUpdate(id, updateData, { returnDocument: "after" }).populate("customer");
     }
 
     async countChats(query) {
@@ -54,12 +54,24 @@ class ChatRepository {
         return ChatState.findOneAndUpdate(
             { phone },
             stateData,
-            { upsert: true, new: true, setDefaultsOnInsert: true }
+            { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
         );
     }
 
     async deleteChatState(phone) {
         return ChatState.findOneAndDelete({ phone });
+    }
+
+    async deleteChatById(id) {
+        return Chat.findByIdAndDelete(id);
+    }
+
+    async deleteMessagesByChat(chatId) {
+        return Message.deleteMany({ chat: chatId });
+    }
+
+    async deleteChatStateByCustomerId(customerId) {
+        return ChatState.deleteMany({ customerId });
     }
 }
 

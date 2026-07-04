@@ -25,6 +25,11 @@ const chatStateSchema = new mongoose.Schema(
             default: ""
         },
 
+        invalidAttempts: {
+            type: Number,
+            default: 0
+        },
+
         data: {
             name: String,
             company: String,

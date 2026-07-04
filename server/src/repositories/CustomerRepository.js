@@ -21,12 +21,12 @@ class CustomerRepository {
         return Customer.findOneAndUpdate(
             { _id: id, isDeleted: { $ne: true } },
             updateData,
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         );
     }
 
     async softDelete(id) {
-        return Customer.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+        return Customer.findByIdAndUpdate(id, { isDeleted: true }, { returnDocument: "after" });
     }
 
     async findAndPaginate(query, skip, limit) {

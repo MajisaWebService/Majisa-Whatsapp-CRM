@@ -58,11 +58,12 @@ export const updateChatState = async (
         {
             $set: {
                 state: newState,
+                invalidAttempts: 0,
                 ...updateData
             }
         },
         {
-            new: true,
+            returnDocument: "after",
             runValidators: true
         }
     );
@@ -71,4 +72,20 @@ export const updateChatState = async (
     console.log(updated);
 
     return updated;
+};
+
+// Increment invalid attempts counter for the latest session
+export const incrementInvalidAttempts = async (customerId) => {
+    const latest = await ChatState.findOne({ customerId }).sort({ createdAt: -1 });
+    if (!latest) return 0;
+
+    const updated = await ChatState.findByIdAndUpdate(
+        latest._id,
+        {
+            $inc: { invalidAttempts: 1 }
+        },
+        { returnDocument: "after" }
+    );
+
+    return updated ? updated.invalidAttempts : 0;
 };

@@ -71,3 +71,13 @@ export const sendMediaMessage = async (req, res, next) => {
         next(error);
     }
 };
+
+// Delete a chat conversation and its history
+export const deleteChat = async (req, res, next) => {
+    try {
+        await ChatService.deleteChat(req.params.chatId);
+        return res.status(200).json({ success: true, message: "Chat deleted successfully." });
+    } catch (error) {
+        next(error);
+    }
+};

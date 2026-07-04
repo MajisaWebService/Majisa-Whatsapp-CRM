@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "6a4766d652defcf24ab4797b",
+    "customer": "6a46338966dda0605d7d30d8",
+    "lastMessage": "👋 *Welcome to Majisa Web Solutions*\n\nPlease choose a service:\n\n1️⃣ Website Development\n2️⃣ Mobile App\n3️⃣ Software\n4️⃣ AI Solutions\n5️⃣ Automation\n6️⃣ E-Commerce\n7️⃣ Digital Marketing\n8️⃣ UI/UX\n9️⃣ AR/VR\n🔟 Talk to Executive",
+    "unreadCount": 5,
+    "isArchived": false,
+    "createdAt": "2026-07-03T07:37:58.811Z",
+    "updatedAt": "2026-07-04T07:19:58.246Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a47ef2fef7d5570d9a6689e",
+    "customer": "6a47ef2fef7d5570d9a6689d",
+    "lastMessage": "📧 Please enter your *Email Address*.\n\n_⬅️ Type *0* to go back_",
+    "unreadCount": 4,
+    "isArchived": false,
+    "createdAt": "2026-07-03T17:19:43.209Z",
+    "updatedAt": "2026-07-03T17:20:12.399Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a47ef89ef7d5570d9a668aa",
+    "customer": "6a46570c986a7c2621e895e4",
+    "lastMessage": "🤖 *Majisa Lead Assistant*\n\nWelcome! I have automatically registered your details:\n👤 *Name:* XYZ xyz\n🏢 *Company:* Xyz\n📧 *Email:* Hsisi@gmail.com\n📱 *Phone:* 9784576454\n🛠️ *Service:* AI Solutions\n\n✅ *Status:* Registered as New Qualified Lead.\n\nOne of our executives will contact you shortly. If you'd like to check our pricing model, feel free to reply with *menu* to explore!",
+    "unreadCount": 10,
+    "isArchived": false,
+    "createdAt": "2026-07-03T17:21:13.573Z",
+    "updatedAt": "2026-07-04T07:07:05.903Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a47f1b7ef7d5570d9a668c0",
+    "customer": "6a47f1b7ef7d5570d9a668bf",
+    "lastMessage": "📋 *Estimated Quotation*\n\n*Service:* Digital Marketing\n*Type:* Social Media Marketing\n\n--------------------\n*Cost Breakdown:*\n\nSocial Media Marketing (Base Package): ₹12,999\n\n--------------------\n*Estimated Total: ₹12,999*\n--------------------\n\nWould you like to talk to an executive to proceed?\n\n1️⃣ Talk to Executive\n\n_⬅️ Type *0* to go back_",
+    "unreadCount": 0,
+    "isArchived": false,
+    "createdAt": "2026-07-03T17:30:31.824Z",
+    "updatedAt": "2026-07-03T18:33:37.300Z",
+    "__v": 0
+  }
+]

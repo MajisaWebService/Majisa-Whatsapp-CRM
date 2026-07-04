@@ -40,7 +40,10 @@ export const handleCustomerInformation = async (message, chatState) => {
 
             // Validate email
             if (!validator.isEmail(text)) {
-                return await message.reply(
+                const { handleInvalidInput } = await import("../index.js");
+                return await handleInvalidInput(
+                    message,
+                    customerId,
                     `❌ Please enter a valid Email Address.\n_Example: example@domain.com_\n\n_⬅️ Type *0* to go back_`
                 );
             }
@@ -66,7 +69,10 @@ export const handleCustomerInformation = async (message, chatState) => {
             }
 
             if (cleanedPhone.length !== 10) {
-                return await message.reply(
+                const { handleInvalidInput } = await import("../index.js");
+                return await handleInvalidInput(
+                    message,
+                    customerId,
                     `❌ Please enter a valid *10-digit* Mobile Number.\n_Only digits allowed._\n\n_⬅️ Type *0* to go back_`
                 );
             }

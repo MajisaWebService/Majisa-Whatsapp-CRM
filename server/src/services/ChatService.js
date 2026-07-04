@@ -137,6 +137,27 @@ class ChatService {
         }
         return chat;
     }
+
+    async deleteChat(chatId) {
+        const chat = await ChatRepository.findChatById(chatId);
+        if (!chat) {
+            throw new Error("Chat not found.");
+        }
+
+        // Delete all messages linked to this chat
+        await ChatRepository.deleteMessagesByChat(chatId);
+
+        // Delete ChatState if customer exists
+        if (chat.customer) {
+            const customer = await CustomerRepository.findById(chat.customer._id);
+            if (customer) {
+                await ChatRepository.deleteChatStateByCustomerId(customer.customerId);
+            }
+        }
+
+        // Delete Chat session document itself
+        await ChatRepository.deleteChatById(chatId);
+    }
 }
 
 export default new ChatService();

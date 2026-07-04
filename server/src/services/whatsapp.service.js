@@ -124,6 +124,10 @@ client.on("message_create", async (message) => {
 
         if (customerId === "status@broadcast") return;
 
+        // Only allow direct messages (chats ending in @c.us or @lid)
+        const isDirectMessage = customerId.endsWith("@c.us") || customerId.endsWith("@lid");
+        if (!isDirectMessage) return;
+
         // Auto-create customer record
         let customer = await Customer.findOne({ customerId });
         if (!customer) {
@@ -220,9 +224,11 @@ client.on("message_create", async (message) => {
 
             emitNewMessage(savedMessage);
 
-            // Pass to chatbot state machine if not paused by administrator.
-            if (!customer.isBotPaused) {
+            // Pass to chatbot state machine if not paused by administrator and not a media message.
+            if (!customer.isBotPaused && !message.hasMedia) {
                 await handleIncomingMessage(message);
+            } else if (message.hasMedia) {
+                console.log(`🤖 Chatbot bypassed for customer: ${customer.name || customer.customerId} (Media message ignored).`);
             } else {
                 console.log(`🤖 Chatbot bypassed for customer: ${customer.name || customer.customerId} (Bot paused by administrator).`);
             }

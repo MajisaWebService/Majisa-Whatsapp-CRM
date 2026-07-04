@@ -1,6 +1,6 @@
 // src/chatbot/index.js
 
-import { getChatState, updateChatState } from "./stateManager.js";
+import { getChatState, updateChatState, incrementInvalidAttempts } from "./stateManager.js";
 import { showMainMenu } from "./menuHandler.js";
 import { handleCustomerInformation } from "./handlers/customer.handler.js";
 import { handleServiceFlow } from "./handlers/service.handler.js";
@@ -18,14 +18,54 @@ const BACK_ENABLED_STATES = [
     "SELECT_SUB_TYPE", "SELECT_PAGES", "SELECT_FEATURES", "SHOW_QUOTATION"
 ];
 
+export const handleInvalidInput = async (message, customerId, replyText) => {
+    try {
+        const attempts = await incrementInvalidAttempts(customerId);
+        console.log(`⚠️ Invalid input attempt ${attempts}/3 for customer ${customerId}`);
+
+        if (attempts >= 3) {
+            // Pause bot and notify support
+            await updateCustomer(customerId, { isBotPaused: true, status: "Talk to Executive" });
+            await updateChatState(customerId, "COMPLETED");
+
+            const NotificationModel = (await import("../models/Notification.js")).default;
+            const notif = await NotificationModel.create({
+                type: "EXECUTIVE_REQUESTED",
+                title: "Bot Paused (Chat Loop Prevention)",
+                message: `The chatbot was automatically paused for customer ${customerId} after 3 consecutive invalid inputs. An executive contact might be needed.`,
+                customerId
+            });
+
+            const { emitNotification } = await import("../sockets/emitter.js");
+            emitNotification(notif);
+
+            return await message.reply(
+                `🤖 *Majisa Assistant*:\n\nIt looks like we are having trouble processing your options. I have paused the chatbot and notified our team.\n\n👨‍💼 One of our executives will contact you shortly to help you directly.`
+            );
+        }
+
+        return await message.reply(replyText);
+    } catch (error) {
+        console.error("Error in handleInvalidInput:", error);
+        return await message.reply(replyText);
+    }
+};
+
 export const handleIncomingMessage = async (message) => {
     try {
+        // Ignore non-direct message senders (like groups)
+        if (!message.from.endsWith("@c.us") && !message.from.endsWith("@lid")) {
+            return;
+        }
 
         // Ignore bot's own messages
         if (message.fromMe) return;
 
         // Ignore status broadcasts
         if (message.from === "status@broadcast") return;
+
+        // Ignore media messages
+        if (message.hasMedia) return;
 
         const customerId = message.from;
         const text = message.body.trim().toLowerCase();
@@ -188,15 +228,11 @@ One of our executives will contact you shortly.
                 const service = SERVICES[text];
 
                 if (!service) {
-
-                    await message.reply(
-                        `❌ Invalid Option
-
-Please choose a number between *1* and *10*.
-
-Type *menu* to see the options again.`
+                    await handleInvalidInput(
+                        message,
+                        customerId,
+                        `❌ Invalid Option\n\nPlease choose a number between *1* and *10*.\n\nType *menu* to see the options again.`
                     );
-
                     break;
                 }
 

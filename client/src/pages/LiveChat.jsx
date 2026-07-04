@@ -289,6 +289,31 @@ export const LiveChat = () => {
         }
     };
 
+    // 11. Delete chat conversation and message logs
+    const handleDeleteChat = async () => {
+        if (!activeChat) return;
+        if (!window.confirm("Are you sure you want to delete this chat conversation? This will permanently delete the conversation listing and all its message history.")) {
+            return;
+        }
+
+        try {
+            const response = await request(`http://localhost:5000/api/v1/chats/${activeChat._id}`, {
+                method: "DELETE"
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert("Chat deleted successfully.");
+                setActiveChat(null);
+                fetchChats();
+            } else {
+                alert(result.message || "Failed to delete chat.");
+            }
+        } catch (err) {
+            console.error("Delete chat error:", err);
+            alert("An error occurred while deleting the chat.");
+        }
+    };
+
     // --- FILTERS ---
     const filteredChats = chats.filter((c) => {
         const name = c.customer?.name || "";
@@ -381,6 +406,13 @@ export const LiveChat = () => {
                                     onChange={(e) => setMessageSearch(e.target.value)}
                                     style={{ width: "160px", padding: "6px 10px", fontSize: "12px" }}
                                 />
+                                <button
+                                    onClick={handleDeleteChat}
+                                    className="btn btn-danger"
+                                    style={{ padding: "6px 12px", fontSize: "12px" }}
+                                >
+                                    🗑️ Delete Chat
+                                </button>
                                 <button
                                     onClick={() => setShowProfilePanel(!showProfilePanel)}
                                     className="btn btn-secondary"

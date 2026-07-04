@@ -23,7 +23,7 @@ class SettingsService {
             settings = await Settings.create(updateData);
         } else {
             settings = await Settings.findByIdAndUpdate(settings._id, updateData, {
-                new: true,
+                returnDocument: "after",
                 runValidators: true
             });
         }

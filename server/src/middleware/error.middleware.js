@@ -10,7 +10,7 @@ const errorHandler = (err, req, res, next) => {
         ip: req.ip
     });
 
-    const statusCode = err.status || res.statusCode === 200 ? 500 : res.statusCode;
+    const statusCode = err.status || (res.statusCode === 200 ? 500 : res.statusCode);
     
     return res.status(statusCode).json({
         success: false,

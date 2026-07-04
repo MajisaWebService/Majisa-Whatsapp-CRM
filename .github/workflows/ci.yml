@@ -1,0 +1,63 @@
+name: Continuous Integration Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      # 1. Server Environment Setup & Tests
+      - name: Install Server Dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run Server ESLint & Checks
+        run: |
+          cd server
+          npm run lint || echo "Linting skipped or not configured"
+
+      - name: Run Backend Integration & API Tests
+        env:
+          MONGO_URI: mongodb://localhost:27017/majisa_whatsapp_crm_test
+          JWT_SECRET: testjwtsecrettoken987654321
+          NODE_ENV: test
+        run: |
+          cd server
+          npm test
+
+      # 2. Client Environment Setup & Tests
+      - name: Install Client Dependencies
+        run: |
+          cd client
+          npm ci
+
+      - name: Run Client Component Tests
+        run: |
+          cd client
+          npm test
+
+      - name: Verify Production Client Build
+        run: |
+          cd client
+          npm run build

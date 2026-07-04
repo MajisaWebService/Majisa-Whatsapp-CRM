@@ -10,7 +10,7 @@ class ProjectRepository {
     }
 
     async update(id, updateData) {
-        return Project.findByIdAndUpdate(id, updateData, { new: true, runValidators: true }).populate("customer");
+        return Project.findByIdAndUpdate(id, updateData, { returnDocument: "after", runValidators: true }).populate("customer");
     }
 
     async delete(id) {

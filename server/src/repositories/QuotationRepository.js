@@ -10,7 +10,7 @@ class QuotationRepository {
     }
 
     async update(id, updateData) {
-        return Quotation.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        return Quotation.findByIdAndUpdate(id, updateData, { returnDocument: "after", runValidators: true });
     }
 
     async findAndPaginate(query, skip, limit) {

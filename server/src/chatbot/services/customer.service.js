@@ -41,7 +41,7 @@ export const updateCustomer = async (customerId, updateData) => {
             $set: updateData
         },
         {
-            new: true,
+            returnDocument: "after",
             runValidators: true
         }
     );

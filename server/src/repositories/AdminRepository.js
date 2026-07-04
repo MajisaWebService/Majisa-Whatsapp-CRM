@@ -22,7 +22,7 @@ class AdminRepository {
     }
 
     async update(id, updateData) {
-        return Admin.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        return Admin.findByIdAndUpdate(id, updateData, { returnDocument: "after", runValidators: true });
     }
 
     async delete(id) {
@@ -47,7 +47,7 @@ class AdminRepository {
     }
 
     async revokeSession(sessionId) {
-        return AdminSession.findByIdAndUpdate(sessionId, { isRevoked: true }, { new: true });
+        return AdminSession.findByIdAndUpdate(sessionId, { isRevoked: true }, { returnDocument: "after" });
     }
 
     async revokeAllSessions(adminId) {

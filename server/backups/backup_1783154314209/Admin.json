@@ -1,0 +1,51 @@
+[
+  {
+    "resetPasswordToken": null,
+    "resetPasswordExpire": null,
+    "passwordHistory": [],
+    "_id": "6a476840f03fd25a06343c5e",
+    "name": "Super Admin",
+    "email": "admin@majisa.com",
+    "password": "$2b$10$ouRS3c5aHOx0msFDH3swdOQ.Gz1hr2WXxOWHxBsLg5TNTUgJQqEL6",
+    "role": "SUPER_ADMIN",
+    "isActive": true,
+    "createdAt": "2026-07-03T07:44:00.415Z",
+    "updatedAt": "2026-07-03T14:33:09.062Z",
+    "__v": 0,
+    "passwordChangedAt": "2026-07-04T08:38:35.262Z"
+  },
+  {
+    "_id": "6a4807de3cada768cf72b421",
+    "name": "Test",
+    "email": "test@domain.com",
+    "password": "$2b$10$iEp3dD2umm0GWclk12jK9OKUHsCL3kd2PGQxptYQfJZ95hrSF77Pu",
+    "role": "ADMIN",
+    "isActive": true,
+    "resetPasswordToken": null,
+    "resetPasswordExpire": null,
+    "passwordHistory": [
+      "$2b$10$iEp3dD2umm0GWclk12jK9OKUHsCL3kd2PGQxptYQfJZ95hrSF77Pu"
+    ],
+    "passwordChangedAt": "2026-07-03T19:05:02.578Z",
+    "createdAt": "2026-07-03T19:05:02.603Z",
+    "updatedAt": "2026-07-03T19:05:02.603Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a48afa1d019c5ccab43ec69",
+    "name": "Modh Tirth",
+    "email": "modhtirth8@gmail.com",
+    "password": "$2b$10$qKmXsXw7dq8/T6AgnXVwOutZbIi./xC2t73hnLx1daGwWcWhxt5iW",
+    "role": "ADMIN",
+    "isActive": true,
+    "resetPasswordToken": null,
+    "resetPasswordExpire": null,
+    "passwordHistory": [
+      "$2b$10$qKmXsXw7dq8/T6AgnXVwOutZbIi./xC2t73hnLx1daGwWcWhxt5iW"
+    ],
+    "passwordChangedAt": "2026-07-04T07:00:49.063Z",
+    "createdAt": "2026-07-04T07:00:49.121Z",
+    "updatedAt": "2026-07-04T07:00:49.121Z",
+    "__v": 0
+  }
+]

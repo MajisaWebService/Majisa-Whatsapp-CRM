@@ -48,10 +48,11 @@ export const handleServiceFlow = async (message, chatState) => {
             const subType = service.subTypes[text];
 
             if (!subType) {
-
                 const maxOption = Object.keys(service.subTypes).length;
-
-                return await message.reply(
+                const { handleInvalidInput } = await import("../index.js");
+                return await handleInvalidInput(
+                    message,
+                    customerId,
                     `❌ Invalid option. Please choose a number between *1* and *${maxOption}*.\n\n_⬅️ Type *0* to go back_`
                 );
             }
@@ -103,8 +104,10 @@ export const handleServiceFlow = async (message, chatState) => {
             const pageRange = PAGE_RANGES[text];
 
             if (!pageRange) {
-
-                return await message.reply(
+                const { handleInvalidInput } = await import("../index.js");
+                return await handleInvalidInput(
+                    message,
+                    customerId,
                     `❌ Invalid option. Please choose a number between *1* and *4*.\n\n_⬅️ Type *0* to go back_`
                 );
             }
@@ -177,8 +180,10 @@ export const handleServiceFlow = async (message, chatState) => {
             }
 
             if (validKeys.length === 0) {
-
-                return await message.reply(
+                const { handleInvalidInput } = await import("../index.js");
+                return await handleInvalidInput(
+                    message,
+                    customerId,
                     `❌ No valid features found.\n\nPlease enter numbers separated by commas.\n_Example: *1,2,3,4*_\n\nType *skip* to skip features.\n\n_⬅️ Type *0* to go back_`
                 );
             }
@@ -248,8 +253,10 @@ One of our executives will contact you shortly.
                 );
 
             } else {
-
-                return await message.reply(
+                const { handleInvalidInput } = await import("../index.js");
+                return await handleInvalidInput(
+                    message,
+                    customerId,
                     `❌ Please choose:\n\n1️⃣ Talk to Executive\n\n_⬅️ Type *0* to go back_`
                 );
             }

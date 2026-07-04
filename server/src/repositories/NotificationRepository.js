@@ -10,7 +10,7 @@ class NotificationRepository {
     }
 
     async update(id, updateData) {
-        return Notification.findByIdAndUpdate(id, updateData, { new: true });
+        return Notification.findByIdAndUpdate(id, updateData, { returnDocument: "after" });
     }
 
     async updateMany(query, updateData) {

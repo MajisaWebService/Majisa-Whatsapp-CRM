@@ -14,7 +14,7 @@ class PricingRepository {
     }
 
     async update(id, updateData) {
-        return PricingRule.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        return PricingRule.findByIdAndUpdate(id, updateData, { returnDocument: "after", runValidators: true });
     }
 
     async delete(id) {

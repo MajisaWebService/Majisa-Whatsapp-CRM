@@ -1,0 +1,121 @@
+{
+  "info": {
+    "name": "Majisa WhatsApp CRM API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newadmin\",\n  \"email\": \"admin@majisa.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": "http://localhost:5000/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@majisa.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": "http://localhost:5000/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "Get Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": "http://localhost:5000/api/v1/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": "http://localhost:5000/api/v1/customers"
+          }
+        },
+        {
+          "name": "Toggle Chatbot Pause State",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": "http://localhost:5000/api/v1/customers/{{customer_id}}/toggle-bot"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": "http://localhost:5000/api/v1/projects"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing Rules",
+      "item": [
+        {
+          "name": "Get All Pricing Rules",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": "http://localhost:5000/api/v1/pricing"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get System Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": "http://localhost:5000/api/v1/settings"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -96,7 +96,6 @@ const customerSchema = new mongoose.Schema(
     }
 );
 
-customerSchema.index({ customerId: 1 });
 customerSchema.index({ phone: 1 });
 customerSchema.index({ status: 1 });
 customerSchema.index({ assignedTo: 1 });

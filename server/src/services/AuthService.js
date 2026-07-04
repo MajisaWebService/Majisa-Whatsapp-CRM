@@ -46,16 +46,22 @@ class AuthService {
     async loginAdmin(email, password, ipAddress = "", userAgent = "") {
         const admin = await AdminRepository.findByEmail(email);
         if (!admin) {
-            throw new Error("Invalid Credentials");
+            const error = new Error("Invalid Credentials");
+            error.status = 401;
+            throw error;
         }
 
         if (!admin.isActive) {
-            throw new Error("This account has been deactivated.");
+            const error = new Error("This account has been deactivated.");
+            error.status = 401;
+            throw error;
         }
 
         const isMatch = await bcrypt.compare(password, admin.password);
         if (!isMatch) {
-            throw new Error("Invalid Credentials");
+            const error = new Error("Invalid Credentials");
+            error.status = 401;
+            throw error;
         }
 
         const refreshToken = this.generateRefreshToken(admin._id);
