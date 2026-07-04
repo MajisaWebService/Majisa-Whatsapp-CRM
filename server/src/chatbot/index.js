@@ -10,11 +10,12 @@ import {
     updateCustomer,
     getCustomer
 } from "./services/customer.service.js";
-import { getServices } from "./config/pricing.config.js";
+import { getServices, getSubTypeMenu } from "./config/pricing.config.js";
 
 // States where "0" means back (not skip features)
 const BACK_ENABLED_STATES = [
     "ASK_NAME", "ASK_COMPANY", "ASK_EMAIL", "ASK_PHONE", "ASK_CITY",
+    "ASK_REQUIREMENT", "ASK_BUDGET", "ASK_TIMELINE", "CONFIRM_LEAD", "EDIT_INFO_MENU",
     "SELECT_SUB_TYPE", "SELECT_PAGES", "SELECT_FEATURES", "SHOW_QUOTATION"
 ];
 
@@ -113,7 +114,9 @@ export const handleIncomingMessage = async (message) => {
                 const isLead = updatedCustomer.name && updatedCustomer.company && updatedCustomer.email && updatedCustomer.phone;
 
                 if (isLead) {
-                    await updateChatState(customerId, "COMPLETED");
+                    await updateChatState(customerId, "COMPLETED", {
+                        "data.detailsCaptured": true
+                    });
                     await updateCustomer(customerId, { status: "New Lead" });
 
                     const NotificationModel = (await import("../models/Notification.js")).default;
@@ -151,18 +154,26 @@ export const handleIncomingMessage = async (message) => {
         // Global Commands
         // ==========================================
 
-        const greetings = [
+        const newSessionGreetings = [
             "hi", "hii", "hiii", "hello", "hey",
-            "start", "menu", "home"
+            "start", "home", "restart"
         ];
 
-        if (greetings.includes(text)) {
-            await updateChatState(customerId, "WELCOME");
+        if (newSessionGreetings.includes(text)) {
+            await updateChatState(customerId, "WELCOME", {
+                "data.detailsCaptured": false,
+                "data.subType": "",
+                "data.subTypeKey": "",
+                "data.pageRange": "",
+                "data.pageRangeKey": "",
+                "data.selectedFeatures": [],
+                "data.selectedFeatureKeys": []
+            });
             await showMainMenu(message);
             return;
         }
 
-        if (text === "restart") {
+        if (text === "menu") {
             await updateChatState(customerId, "WELCOME");
             await showMainMenu(message);
             return;
@@ -203,27 +214,35 @@ export const handleIncomingMessage = async (message) => {
 
             case "MAIN_MENU": {
 
-                // Option 10 — Talk to Executive
-                if (text === "10") {
-
+                // Option 7 — Talk to Executive
+                if (text === "7") {
                     await updateChatState(customerId, "COMPLETED");
-
                     await updateCustomer(customerId, {
                         status: "Talk to Executive"
                     });
-
                     await message.reply(
-                        `👨‍💼 Thank you for contacting *Majisa Web Solutions*.
-
-One of our executives will contact you shortly.
-
-📞 Majisa Web Solutions`
+                        `👨‍💼 Thank you for contacting *Majisa Web Solutions*.\n\nOne of our executives will contact you shortly.\n\n📞 Majisa Web Solutions`
                     );
-
                     break;
                 }
 
-                // Options 1–9 — Service Selection
+                // Option 8 — Portfolio
+                if (text === "8") {
+                    await message.reply(
+                        `📁 *Our Portfolio*\n\nCheck out some of our premium projects here:\n🌐 *Websites:* https://portfolio.majisawebsolutions.com/websites\n📱 *Mobile Apps:* https://portfolio.majisawebsolutions.com/apps\n💻 *Softwares:* https://portfolio.majisawebsolutions.com/softwares\n\nType *menu* to return to the main menu.`
+                    );
+                    break;
+                }
+
+                // Option 9 — Pricing
+                if (text === "9") {
+                    await message.reply(
+                        `💰 *Starting Prices*\n\n🌐 *Website Development:* Starting from ₹9,999\n📱 *Mobile Application:* Starting from ₹19,999\n💻 *Custom Software:* Starting from ₹14,999\n☁️ *Cloud & DevOps:* Starting from ₹9,999\n🤖 *AI Automation:* Starting from ₹14,999\n📈 *Digital Marketing:* Starting from ₹9,999\n\nType *menu* to return to the main menu.`
+                    );
+                    break;
+                }
+
+                // Options 1–6 — Service Selection
                 const SERVICES = await getServices();
                 const service = SERVICES[text];
 
@@ -231,30 +250,32 @@ One of our executives will contact you shortly.
                     await handleInvalidInput(
                         message,
                         customerId,
-                        `❌ Invalid Option\n\nPlease choose a number between *1* and *10*.\n\nType *menu* to see the options again.`
+                        `❌ Invalid Option\n\nPlease choose a number between *1* and *9*.\n\nType *menu* to see the options again.`
                     );
                     break;
                 }
 
-                // Save selected service
-                await updateCustomer(customerId, {
-                    service: service.name
-                });
+                if (service.hasSubTypes) {
+                    await updateChatState(customerId, "SELECT_SUB_TYPE", {
+                        service: service.name,
+                        serviceKey: text
+                    });
 
-                await updateChatState(customerId, "ASK_NAME", {
-                    service: service.name,
-                    serviceKey: text
-                });
+                    const subTypeMenu = await getSubTypeMenu(text);
 
-                await message.reply(
-                    `${service.emoji} *${service.name}*
+                    await message.reply(
+                        `🌐 *${service.name}*\n\nChoose a type:\n\n${subTypeMenu}\n\n_⬅️ Type *0* to go back_`
+                    );
+                } else {
+                    await updateChatState(customerId, "SHOW_QUOTATION", {
+                        service: service.name,
+                        serviceKey: text
+                    });
 
-Great choice!
-
-👤 Please enter your Full Name.
-
-_⬅️ Type *0* to go back_`
-                );
+                    await message.reply(
+                        `🌐 *${service.name}*\n\nGreat choice!\n\n📝 Our team will prepare a custom quotation for you.`
+                    );
+                }
 
                 break;
             }
@@ -268,6 +289,10 @@ _⬅️ Type *0* to go back_`
             case "ASK_EMAIL":
             case "ASK_PHONE":
             case "ASK_CITY":
+            case "ASK_REQUIREMENT":
+            case "ASK_BUDGET":
+            case "ASK_TIMELINE":
+            case "EDIT_INFO_MENU":
 
                 await handleCustomerInformation(message, chatState);
                 break;
@@ -281,6 +306,7 @@ _⬅️ Type *0* to go back_`
             case "SELECT_PAGES":
             case "SELECT_FEATURES":
             case "SHOW_QUOTATION":
+            case "CONFIRM_LEAD":
 
                 await handleServiceFlow(message, chatState);
                 break;

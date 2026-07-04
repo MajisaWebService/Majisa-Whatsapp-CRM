@@ -46,7 +46,12 @@ const chatStateSchema = new mongoose.Schema(
             pageRange: String,
             pageRangeKey: String,
             selectedFeatures: [String],
-            selectedFeatureKeys: [String]
+            selectedFeatureKeys: [String],
+            detailsCaptured: {
+                type: Boolean,
+                default: false
+            },
+            editMode: Boolean
         }
     },
     {

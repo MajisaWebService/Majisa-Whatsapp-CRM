@@ -16,6 +16,16 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
             category: "SERVICE",
             key: "1",
             name: "Website Development",
+            hasSubTypes: true,
+            isActive: true
+        });
+
+        await PricingRule.create({
+            category: "PACKAGE",
+            key: "1_1",
+            name: "Business Website",
+            price: 9999,
+            serviceKey: "1",
             isActive: true
         });
 
@@ -64,7 +74,7 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
         expect(stateCheck.state).toBe("MAIN_MENU");
     });
 
-    it("should transition state to ASK_NAME when a valid service menu option is sent", async () => {
+    it("should transition state to SELECT_SUB_TYPE when a valid service menu option is sent", async () => {
         // First set state to MAIN_MENU
         await ChatState.findOneAndUpdate(
             { customerId: testCustomerId },
@@ -82,7 +92,7 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
         expect(msg.reply).toHaveBeenCalled();
 
         const stateCheck = await ChatState.findOne({ customerId: testCustomerId });
-        expect(stateCheck.state).toBe("ASK_NAME");
+        expect(stateCheck.state).toBe("SELECT_SUB_TYPE");
         expect(stateCheck.invalidAttempts).toBe(0); // Should be reset on success
     });
 

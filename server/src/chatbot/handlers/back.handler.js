@@ -8,12 +8,11 @@ import {
     getPageRangeMenu,
     getFeaturesMenu
 } from "../config/pricing.config.js";
-
-// ==========================================
-// Back Navigation Handler
-// ==========================================
-// Returns true if it handled the "back" action,
-// so the caller can stop further processing.
+import {
+    calculateQuotation,
+    buildQuotationText
+} from "../services/quotation.service.js";
+import { showReviewScreen } from "./customer.handler.js";
 
 export const handleBack = async (message, chatState) => {
     const SERVICES = await getServices();
@@ -24,120 +23,97 @@ export const handleBack = async (message, chatState) => {
 
     switch (state) {
 
-        // From ASK_NAME → back to MAIN_MENU
-        case "ASK_NAME":
-
+        case "SELECT_SUB_TYPE":
             await updateChatState(customerId, "WELCOME");
             await showMainMenu(message);
             return true;
 
-        // From ASK_COMPANY → back to ASK_NAME
-        case "ASK_COMPANY":
-
-            await updateChatState(customerId, "ASK_NAME");
-
-            await message.reply(
-                `👤 *Enter Your Full Name*\n\nPlease enter your Full Name.\n\n_⬅️ Type *0* to go back_`
-            );
-
-            return true;
-
-        // From ASK_EMAIL → back to ASK_COMPANY
-        case "ASK_EMAIL":
-
-            await updateChatState(customerId, "ASK_COMPANY");
-
-            await message.reply(
-                `🏢 *Enter Company Name*\n\nPlease enter your Company Name.\n\n_⬅️ Type *0* to go back_`
-            );
-
-            return true;
-
-        // From ASK_PHONE → back to ASK_EMAIL
-        case "ASK_PHONE":
-
-            await updateChatState(customerId, "ASK_EMAIL");
-
-            await message.reply(
-                `📧 *Enter Email Address*\n\nPlease enter your Email Address.\n\n_⬅️ Type *0* to go back_`
-            );
-
-            return true;
-
-        // From ASK_CITY → back to ASK_PHONE
-        case "ASK_CITY":
-
-            await updateChatState(customerId, "ASK_PHONE");
-
-            await message.reply(
-                `📱 *Enter Mobile Number*\n\nPlease enter your 10-digit Mobile Number.\n\n_⬅️ Type *0* to go back_`
-            );
-
-            return true;
-
-        // From SELECT_SUB_TYPE → back to ASK_CITY
-        case "SELECT_SUB_TYPE":
-
-            await updateChatState(customerId, "ASK_CITY");
-
-            await message.reply(
-                `📍 *Your City*\n\nWhich city are you from?\n\n_⬅️ Type *0* to go back_`
-            );
-
-            return true;
-
-        // From SELECT_PAGES → back to SELECT_SUB_TYPE
         case "SELECT_PAGES":
-
             await updateChatState(customerId, "SELECT_SUB_TYPE");
-
             if (service && service.subTypes) {
                 await message.reply(await getSubTypeMenu(serviceKey));
             }
-
             return true;
 
-        // From SELECT_FEATURES → back to SELECT_PAGES (if has pages) or SELECT_SUB_TYPE
         case "SELECT_FEATURES":
-
             if (service && service.hasPages) {
-
                 await updateChatState(customerId, "SELECT_PAGES");
                 await message.reply(await getPageRangeMenu());
-
             } else {
-
                 await updateChatState(customerId, "SELECT_SUB_TYPE");
-
                 if (service && service.subTypes) {
                     await message.reply(await getSubTypeMenu(serviceKey));
                 }
             }
-
             return true;
 
-        // From SHOW_QUOTATION → back to SELECT_FEATURES (if has) or SELECT_PAGES or SELECT_SUB_TYPE
         case "SHOW_QUOTATION":
-
             if (service && service.hasFeatures) {
-
                 await updateChatState(customerId, "SELECT_FEATURES");
                 await message.reply(await getFeaturesMenu());
-
             } else if (service && service.hasPages) {
-
                 await updateChatState(customerId, "SELECT_PAGES");
                 await message.reply(await getPageRangeMenu());
-
             } else {
-
                 await updateChatState(customerId, "SELECT_SUB_TYPE");
-
                 if (service && service.subTypes) {
                     await message.reply(await getSubTypeMenu(serviceKey));
                 }
             }
+            return true;
 
+        case "ASK_NAME": {
+            await updateChatState(customerId, "SHOW_QUOTATION");
+            const latestState = await getChatState(customerId);
+            const quotationData = await calculateQuotation(latestState);
+            const quotationText = await buildQuotationText(latestState, quotationData);
+            await message.reply(quotationText);
+            return true;
+        }
+
+        case "ASK_COMPANY":
+            await updateChatState(customerId, "ASK_NAME");
+            await message.reply(`👤 Please enter your *Full Name*.\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "ASK_EMAIL":
+            await updateChatState(customerId, "ASK_COMPANY");
+            await message.reply(`🏢 Please enter your *Company Name*.\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "ASK_PHONE":
+            await updateChatState(customerId, "ASK_EMAIL");
+            await message.reply(`📧 Please enter your *Email Address*.\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "ASK_CITY":
+            await updateChatState(customerId, "ASK_PHONE");
+            await message.reply(`📱 Please enter your *10-digit Mobile Number*.\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "ASK_REQUIREMENT":
+            await updateChatState(customerId, "ASK_CITY");
+            await message.reply(`📍 Which *city* are you from?\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "ASK_BUDGET":
+            await updateChatState(customerId, "ASK_REQUIREMENT");
+            await message.reply(`📝 Please describe your *Project Requirement*:\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "ASK_TIMELINE":
+            await updateChatState(customerId, "ASK_BUDGET");
+            await message.reply(`💰 What is your *Expected Budget*?\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "CONFIRM_LEAD":
+            await updateChatState(customerId, "ASK_TIMELINE");
+            await message.reply(`📅 What is your *Expected Timeline*? (e.g. 1 month, 3 weeks)\n\n_⬅️ Type *0* to go back_`);
+            return true;
+
+        case "EDIT_INFO_MENU":
+            await updateChatState(customerId, "CONFIRM_LEAD");
+            await showReviewScreen(message, customerId);
             return true;
 
         default:

@@ -115,39 +115,44 @@ export const buildQuotationText = async (chatState, quotationData) => {
         .map(k => FEATURES[k]?.name)
         .filter(Boolean);
 
-    let text = `📋 *Estimated Quotation*\n\n`;
-
-    text += `*Service:* ${serviceName}\n`;
+    let text = `━━━━━━━━━━━━━━━━━━\n\n`;
+    text += `📋 *Project Summary*\n\n`;
+    text += `━━━━━━━━━━━━━━━━━━\n\n`;
+    text += `*Service:*\n${serviceName}\n\n`;
 
     if (subTypeName) {
-        text += `*Type:* ${subTypeName}\n`;
+        text += `*Type:*\n${subTypeName}\n\n`;
     }
 
     if (pageRange) {
-        text += `*Pages:* ${pageRange}\n`;
+        text += `*Pages:*\n${pageRange}\n\n`;
     }
 
     if (featureNames.length > 0) {
-        text += `\n*Selected Features:*\n`;
+        text += `*Features:*\n`;
         for (const name of featureNames) {
-            text += `  ✅ ${name}\n`;
+            text += `✔ ${name}\n`;
         }
+        text += `\n`;
     }
 
-    // Itemized Breakdown
-    text += `\n--------------------\n`;
+    text += `━━━━━━━━━━━━━━━━━━\n\n`;
     text += `*Cost Breakdown:*\n\n`;
 
     for (const item of breakdown.items) {
         text += `${item.name}: ₹${item.price.toLocaleString("en-IN")}\n`;
     }
 
-    text += `\n--------------------\n`;
-    text += `*Estimated Total: ₹${totalAmount.toLocaleString("en-IN")}*\n`;
-    text += `--------------------\n\n`;
+    text += `\n━━━━━━━━━━━━━━━━━━\n\n`;
+    text += `*Estimated Price*\n\n`;
+    text += `*₹${totalAmount.toLocaleString("en-IN")}*\n\n`;
+    text += `━━━━━━━━━━━━━━━━━━\n\n`;
 
-    text += `Would you like to talk to an executive to proceed?\n\n`;
-    text += `1️⃣ Talk to Executive`;
+    text += `Would you like to continue?\n\n`;
+    text += `1️⃣ Continue\n`;
+    text += `2️⃣ Modify Features\n`;
+    text += `3️⃣ Change Package\n\n`;
+    text += `_⬅️ Type *0* to go back_`;
 
     return text;
 };
