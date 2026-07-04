@@ -74,7 +74,7 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
         expect(stateCheck.state).toBe("MAIN_MENU");
     });
 
-    it("should transition state to SELECT_SUB_TYPE when a valid service menu option is sent", async () => {
+    it("should transition state to ASK_NAME when a valid service menu option is sent", async () => {
         // First set state to MAIN_MENU
         await ChatState.findOneAndUpdate(
             { customerId: testCustomerId },
@@ -92,7 +92,9 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
         expect(msg.reply).toHaveBeenCalled();
 
         const stateCheck = await ChatState.findOne({ customerId: testCustomerId });
-        expect(stateCheck.state).toBe("SELECT_SUB_TYPE");
+        expect(stateCheck.state).toBe("ASK_NAME");
+        expect(stateCheck.service).toBe("Website Development");
+        expect(stateCheck.serviceKey).toBe("1");
         expect(stateCheck.invalidAttempts).toBe(0); // Should be reset on success
     });
 

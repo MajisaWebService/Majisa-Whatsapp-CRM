@@ -161,7 +161,7 @@ export const handleServiceFlow = async (message, chatState) => {
             for (const name of validNames) {
                 replyMsg += `  ✔ ${name}\n`;
             }
-            replyMsg += `\nType *11️⃣* (Done Selecting) to proceed and see the quotation, or send other numbers to modify your selection.\n\n_⬅️ Type *0* to go back_`;
+            replyMsg += `\nType *11* (Done Selecting — two ones) to proceed and see the quotation, or send other numbers to modify your selection.\n\n_⬅️ Type *0* to go back_`;
 
             return await message.reply(replyMsg);
         }

@@ -127,7 +127,8 @@ export const getFeaturesMenu = async () => {
     }
 
     menu += `\nExample: *1,2,3,4*\n`;
-    menu += `Type *skip* to skip features.`;
+    menu += `Type *skip* to skip features.\n`;
+    menu += `Type *11* when done selecting features (two ones).`;
 
     return menu.trim();
 };

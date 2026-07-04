@@ -75,10 +75,12 @@ export const extractLeadDetails = (text) => {
         { name: "Cloud & Hosting", keywords: ["host", "hosting", "domain", "server", "aws", "cloud", "deployment"] }
     ];
 
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const lowercaseText = cleanText.toLowerCase();
     for (const item of serviceKeywords) {
         for (const kw of item.keywords) {
-            if (lowercaseText.includes(kw)) {
+            const regex = new RegExp(`\\b${escapeRegex(kw.toLowerCase())}\\b`, "i");
+            if (regex.test(lowercaseText)) {
                 details.service = item.name;
                 break;
             }

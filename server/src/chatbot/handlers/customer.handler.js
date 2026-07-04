@@ -2,7 +2,13 @@
 
 import validator from "validator";
 import { updateChatState, getChatState } from "../stateManager.js";
-import { getServices, getFeatures } from "../config/pricing.config.js";
+import {
+    getServices,
+    getFeatures,
+    getSubTypeMenu,
+    getPageRangeMenu,
+    getFeaturesMenu
+} from "../config/pricing.config.js";
 
 export const showReviewScreen = async (message, customerId) => {
     const latestState = await getChatState(customerId);
@@ -201,14 +207,40 @@ export const handleCustomerInformation = async (message, chatState) => {
 
         case "ASK_TIMELINE": {
             await updateChatState(customerId, "ASK_TIMELINE", {
-                "data.timeline": text
+                "data.timeline": text,
+                "data.detailsCaptured": true
             });
 
-            await updateChatState(customerId, "CONFIRM_LEAD", {
-                "data.editMode": false
-            });
+            const latestState = await getChatState(customerId);
+            const SERVICES = await getServices();
+            const service = SERVICES[latestState.serviceKey];
 
-            return await showReviewScreen(message, customerId);
+            if (service?.hasSubTypes) {
+                await updateChatState(customerId, "SELECT_SUB_TYPE");
+                return await message.reply(
+                    `🛠️ Please choose a package for *${service.name}*:\n\n${await getSubTypeMenu(latestState.serviceKey)}\n\n_⬅️ Type *0* to go back_`
+                );
+            }
+
+            if (service?.hasPages) {
+                await updateChatState(customerId, "SELECT_PAGES");
+                return await message.reply(
+                    `📄 Please choose the page range for *${service.name}*:\n\n${await getPageRangeMenu()}\n\n_⬅️ Type *0* to go back_`
+                );
+            }
+
+            if (service?.hasFeatures) {
+                await updateChatState(customerId, "SELECT_FEATURES");
+                return await message.reply(
+                    `${await getFeaturesMenu()}\n\n_⬅️ Type *0* to go back_`
+                );
+            }
+
+            await updateChatState(customerId, "SHOW_QUOTATION");
+            const { calculateQuotation, buildQuotationText } = await import("../services/quotation.service.js");
+            const quotationData = await calculateQuotation(latestState);
+            const quotationText = await buildQuotationText(latestState, quotationData);
+            return await message.reply(quotationText);
         }
 
         case "EDIT_INFO_MENU": {
@@ -236,7 +268,7 @@ export const handleCustomerInformation = async (message, chatState) => {
             } else if (text === "8") {
                 await updateChatState(customerId, "ASK_TIMELINE", { "data.editMode": true });
                 return await message.reply(`📅 What is your *Expected Timeline*?:\n\n_⬅️ Type *0* to go back_`);
-            } else if (text === "0" || text === "back") {
+            } else if (text === "0" || text === "back" || text === "b") {
                 await updateChatState(customerId, "CONFIRM_LEAD");
                 return await showReviewScreen(message, customerId);
             } else {

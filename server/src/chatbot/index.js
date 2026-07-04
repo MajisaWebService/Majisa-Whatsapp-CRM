@@ -86,60 +86,59 @@ export const handleIncomingMessage = async (message) => {
 
         // --- NLP Auto-Extraction Block ---
         const customerForNlp = await getCustomer(customerId);
-        const isDetailsIncomplete = customerForNlp && (!customerForNlp.name || !customerForNlp.company || !customerForNlp.email || !customerForNlp.phone);
-
-        // Always attempt NLP extraction if customer details are sent (signaled by at least 2 profile properties)
         let nlpMatched = false;
-        const { extractLeadDetails } = await import("./utils/nlpExtractor.js");
-        const extracted = extractLeadDetails(message.body);
-        const extractedFields = Object.entries(extracted).filter(([k, v]) => v !== null);
+        if (["WELCOME", "MAIN_MENU"].includes(chatState.state)) {
+            const { extractLeadDetails } = await import("./utils/nlpExtractor.js");
+            const extracted = extractLeadDetails(message.body);
+            const extractedFields = Object.entries(extracted).filter(([k, v]) => v !== null);
 
-        if (extractedFields.length >= 2) {
-            nlpMatched = true;
-            const customer = customerForNlp;
-            if (customer) {
-                const updates = {};
-                if (extracted.name && (customer.name !== extracted.name)) updates.name = extracted.name;
-                if (extracted.company && (customer.company !== extracted.company)) updates.company = extracted.company;
-                if (extracted.email && (customer.email !== extracted.email)) updates.email = extracted.email;
-                if (extracted.phone && (customer.phone !== extracted.phone)) updates.phone = extracted.phone;
-                if (extracted.service && (customer.service !== extracted.service)) updates.service = extracted.service;
+            if (extractedFields.length >= 2) {
+                nlpMatched = true;
+                const customer = customerForNlp;
+                if (customer) {
+                    const updates = {};
+                    if (extracted.name && (customer.name !== extracted.name)) updates.name = extracted.name;
+                    if (extracted.company && (customer.company !== extracted.company)) updates.company = extracted.company;
+                    if (extracted.email && (customer.email !== extracted.email)) updates.email = extracted.email;
+                    if (extracted.phone && (customer.phone !== extracted.phone)) updates.phone = extracted.phone;
+                    if (extracted.service && (customer.service !== extracted.service)) updates.service = extracted.service;
 
-                if (Object.keys(updates).length > 0) {
-                    await updateCustomer(customerId, updates);
-                    console.log(`🤖 [NLP Extractor] Auto-extracted details for ${customerId}:`, updates);
-                }
+                    if (Object.keys(updates).length > 0) {
+                        await updateCustomer(customerId, updates);
+                        console.log(`🤖 [NLP Extractor] Auto-extracted details for ${customerId}:`, updates);
+                    }
 
-                const updatedCustomer = await getCustomer(customerId);
-                const isLead = updatedCustomer.name && updatedCustomer.company && updatedCustomer.email && updatedCustomer.phone;
+                    const updatedCustomer = await getCustomer(customerId);
+                    const isLead = updatedCustomer.name && updatedCustomer.company && updatedCustomer.email && updatedCustomer.phone;
 
-                if (isLead) {
-                    await updateChatState(customerId, "COMPLETED", {
-                        "data.detailsCaptured": true
-                    });
-                    await updateCustomer(customerId, { status: "New Lead" });
+                    if (isLead) {
+                        await updateChatState(customerId, "COMPLETED", {
+                            "data.detailsCaptured": true
+                        });
+                        await updateCustomer(customerId, { status: "New Lead" });
 
-                    const NotificationModel = (await import("../models/Notification.js")).default;
-                    const notif = await NotificationModel.create({
-                        type: "NEW_LEAD",
-                        title: "New Qualified Lead (NLP Auto-extracted)",
-                        message: `Lead details auto-extracted for ${updatedCustomer.name} (${updatedCustomer.company}) interested in ${updatedCustomer.service || "Website Development"}.`,
-                        customerId
-                    });
+                        const NotificationModel = (await import("../models/Notification.js")).default;
+                        const notif = await NotificationModel.create({
+                            type: "NEW_LEAD",
+                            title: "New Qualified Lead (NLP Auto-extracted)",
+                            message: `Lead details auto-extracted for ${updatedCustomer.name} (${updatedCustomer.company}) interested in ${updatedCustomer.service || "Website Development"}.`,
+                            customerId
+                        });
 
-                    const { emitNotification } = await import("../sockets/emitter.js");
-                    emitNotification(notif);
+                        const { emitNotification } = await import("../sockets/emitter.js");
+                        emitNotification(notif);
 
-                    await message.reply(
-                        `🤖 *Majisa Lead Assistant*\n\nWelcome! I have automatically registered your details:\n👤 *Name:* ${updatedCustomer.name}\n🏢 *Company:* ${updatedCustomer.company}\n📧 *Email:* ${updatedCustomer.email}\n📱 *Phone:* ${updatedCustomer.phone}\n🛠️ *Service:* ${updatedCustomer.service || "Website Development"}\n\n✅ *Status:* Registered as New Qualified Lead.\n\nOne of our executives will contact you shortly. If you'd like to check our pricing model, feel free to reply with *menu* to explore!`
-                    );
-                    return;
-                } else if (Object.keys(updates).length > 0) {
-                    const capturedList = Object.keys(updates).map(k => `*${k.charAt(0).toUpperCase() + k.slice(1)}*`).join(", ");
-                    await message.reply(
-                        `🤖 *Majisa Assistant*: I've noted down your ${capturedList}. Let's continue filling out the remaining details.`
-                    );
-                    return;
+                        await message.reply(
+                            `🤖 *Majisa Lead Assistant*\n\nWelcome! I have automatically registered your details:\n👤 *Name:* ${updatedCustomer.name}\n🏢 *Company:* ${updatedCustomer.company}\n📧 *Email:* ${updatedCustomer.email}\n📱 *Phone:* ${updatedCustomer.phone}\n🛠️ *Service:* ${updatedCustomer.service || "Website Development"}\n\n✅ *Status:* Registered as New Qualified Lead.\n\nOne of our executives will contact you shortly. If you'd like to check our pricing model, feel free to reply with *menu* to explore!`
+                        );
+                        return;
+                    } else if (Object.keys(updates).length > 0) {
+                        const capturedList = Object.keys(updates).map(k => `*${k.charAt(0).toUpperCase() + k.slice(1)}*`).join(", ");
+                        await message.reply(
+                            `🤖 *Majisa Assistant*: I've noted down your ${capturedList}. Let's continue filling out the remaining details.`
+                        );
+                        return;
+                    }
                 }
             }
         }
@@ -180,10 +179,10 @@ export const handleIncomingMessage = async (message) => {
         }
 
         // ==========================================
-        // Global Back Command — "0" or "back"
+        // Global Back Command — "0", "B", or "back"
         // ==========================================
 
-        const isBackCommand = (text === "0" || text === "back");
+        const isBackCommand = (text === "0" || text === "back" || text === "b");
 
         if (isBackCommand && BACK_ENABLED_STATES.includes(chatState.state)) {
 
@@ -235,49 +234,90 @@ export const handleIncomingMessage = async (message) => {
                 }
 
                 // Option 9 — Pricing
-                if (text === "9") {
+                if (text === "9" || text.includes("pricing") || text.includes("price")) {
                     await message.reply(
                         `💰 *Starting Prices*\n\n🌐 *Website Development:* Starting from ₹9,999\n📱 *Mobile Application:* Starting from ₹19,999\n💻 *Custom Software:* Starting from ₹14,999\n☁️ *Cloud & DevOps:* Starting from ₹9,999\n🤖 *AI Automation:* Starting from ₹14,999\n📈 *Digital Marketing:* Starting from ₹9,999\n\nType *menu* to return to the main menu.`
                     );
                     break;
                 }
 
-                // Options 1–6 — Service Selection
+                // Options 1–6 — Service Selection (number or typed service name)
                 const SERVICES = await getServices();
-                const service = SERVICES[text];
+                let serviceKey = text;
+                let service = SERVICES[serviceKey];
+
+                const normalizedText = text.replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+                const serviceKeywordMap = [
+                    { key: "1", terms: ["website", "web", "website development", "website designing", "website design", "web development"] },
+                    { key: "2", terms: ["mobile", "app", "mobile application", "application", "android", "ios", "mobile app"] },
+                    { key: "3", terms: ["custom software", "software", "crm", "erp", "portal", "dashboard", "custom app"] },
+                    { key: "4", terms: ["cloud", "devops", "hosting", "server", "aws", "deployment"] },
+                    { key: "5", terms: ["ai", "automation", "ai automation", "artificial intelligence", "machine learning", "chatbot"] },
+                    { key: "6", terms: ["digital marketing", "marketing", "seo", "ads", "social media", "branding"] }
+                ];
+
+                if (!service && normalizedText) {
+                    for (const candidate of serviceKeywordMap) {
+                        if (candidate.terms.some(term => normalizedText.includes(term))) {
+                            serviceKey = candidate.key;
+                            service = SERVICES[serviceKey];
+                            break;
+                        }
+                    }
+                }
 
                 if (!service) {
+                    if (normalizedText.includes("portfolio")) {
+                        await message.reply(
+                            `📁 *Our Portfolio*\n\nCheck out some of our premium projects here:\n🌐 *Websites:* https://portfolio.majisawebsolutions.com/websites\n📱 *Mobile Apps:* https://portfolio.majisawebsolutions.com/apps\n💻 *Softwares:* https://portfolio.majisawebsolutions.com/softwares\n\nType *menu* to return to the main menu.`
+                        );
+                        break;
+                    }
+
+                    if (normalizedText.includes("executive") || normalizedText.includes("talk to executive") || normalizedText.includes("sales")) {
+                        await updateChatState(customerId, "COMPLETED");
+                        await updateCustomer(customerId, {
+                            status: "Talk to Executive"
+                        });
+                        await message.reply(
+                            `👨‍💼 Thank you for contacting *Majisa Web Solutions*.\n\nOne of our executives will contact you shortly.\n\n📞 Majisa Web Solutions`
+                        );
+                        break;
+                    }
+
                     await handleInvalidInput(
                         message,
                         customerId,
-                        `❌ Invalid Option\n\nPlease choose a number between *1* and *9*.\n\nType *menu* to see the options again.`
+                        `❌ Invalid Option\n\nPlease choose a number between *1* and *9*, or type the service name like *Website Development*.\n\nType *menu* to see the options again.`
                     );
                     break;
                 }
 
-                if (service.hasSubTypes) {
-                    await updateChatState(customerId, "SELECT_SUB_TYPE", {
-                        service: service.name,
-                        serviceKey: text
-                    });
+                await updateChatState(customerId, "ASK_NAME", {
+                    service: service.name,
+                    serviceKey: text,
+                    "data.detailsCaptured": false,
+                    "data.name": "",
+                    "data.company": "",
+                    "data.email": "",
+                    "data.phone": "",
+                    "data.city": "",
+                    "data.requirement": "",
+                    "data.budget": "",
+                    "data.timeline": "",
+                    "data.subType": "",
+                    "data.subTypeKey": "",
+                    "data.pageRange": "",
+                    "data.pageRangeKey": "",
+                    "data.selectedFeatures": [],
+                    "data.selectedFeatureKeys": []
+                });
 
-                    const subTypeMenu = await getSubTypeMenu(text);
+                return await message.reply(
+                    `👤 Great! Let's start with your *Full Name*.
 
-                    await message.reply(
-                        `🌐 *${service.name}*\n\nChoose a type:\n\n${subTypeMenu}\n\n_⬅️ Type *0* to go back_`
-                    );
-                } else {
-                    await updateChatState(customerId, "SHOW_QUOTATION", {
-                        service: service.name,
-                        serviceKey: text
-                    });
-
-                    await message.reply(
-                        `🌐 *${service.name}*\n\nGreat choice!\n\n📝 Our team will prepare a custom quotation for you.`
-                    );
-                }
-
-                break;
+_⬅️ Type *0* to go back_`
+                );
             }
 
             // ------------------------------------------

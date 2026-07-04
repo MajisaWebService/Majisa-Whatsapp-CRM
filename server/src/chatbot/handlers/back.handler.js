@@ -24,14 +24,17 @@ export const handleBack = async (message, chatState) => {
     switch (state) {
 
         case "SELECT_SUB_TYPE":
-            await updateChatState(customerId, "WELCOME");
-            await showMainMenu(message);
+            await updateChatState(customerId, "ASK_TIMELINE");
+            await message.reply(`📅 What is your *Expected Timeline*? (e.g. 1 month, 3 weeks)\n\n_⬅️ Type *0* to go back_`);
             return true;
 
         case "SELECT_PAGES":
-            await updateChatState(customerId, "SELECT_SUB_TYPE");
             if (service && service.subTypes) {
+                await updateChatState(customerId, "SELECT_SUB_TYPE");
                 await message.reply(await getSubTypeMenu(serviceKey));
+            } else {
+                await updateChatState(customerId, "ASK_TIMELINE");
+                await message.reply(`📅 What is your *Expected Timeline*? (e.g. 1 month, 3 weeks)\n\n_⬅️ Type *0* to go back_`);
             }
             return true;
 
@@ -39,11 +42,12 @@ export const handleBack = async (message, chatState) => {
             if (service && service.hasPages) {
                 await updateChatState(customerId, "SELECT_PAGES");
                 await message.reply(await getPageRangeMenu());
-            } else {
+            } else if (service && service.subTypes) {
                 await updateChatState(customerId, "SELECT_SUB_TYPE");
-                if (service && service.subTypes) {
-                    await message.reply(await getSubTypeMenu(serviceKey));
-                }
+                await message.reply(await getSubTypeMenu(serviceKey));
+            } else {
+                await updateChatState(customerId, "ASK_TIMELINE");
+                await message.reply(`📅 What is your *Expected Timeline*? (e.g. 1 month, 3 weeks)\n\n_⬅️ Type *0* to go back_`);
             }
             return true;
 
@@ -54,20 +58,18 @@ export const handleBack = async (message, chatState) => {
             } else if (service && service.hasPages) {
                 await updateChatState(customerId, "SELECT_PAGES");
                 await message.reply(await getPageRangeMenu());
-            } else {
+            } else if (service && service.subTypes) {
                 await updateChatState(customerId, "SELECT_SUB_TYPE");
-                if (service && service.subTypes) {
-                    await message.reply(await getSubTypeMenu(serviceKey));
-                }
+                await message.reply(await getSubTypeMenu(serviceKey));
+            } else {
+                await updateChatState(customerId, "ASK_TIMELINE");
+                await message.reply(`📅 What is your *Expected Timeline*? (e.g. 1 month, 3 weeks)\n\n_⬅️ Type *0* to go back_`);
             }
             return true;
 
         case "ASK_NAME": {
-            await updateChatState(customerId, "SHOW_QUOTATION");
-            const latestState = await getChatState(customerId);
-            const quotationData = await calculateQuotation(latestState);
-            const quotationText = await buildQuotationText(latestState, quotationData);
-            await message.reply(quotationText);
+            await updateChatState(customerId, "WELCOME");
+            await showMainMenu(message);
             return true;
         }
 
@@ -107,8 +109,11 @@ export const handleBack = async (message, chatState) => {
             return true;
 
         case "CONFIRM_LEAD":
-            await updateChatState(customerId, "ASK_TIMELINE");
-            await message.reply(`📅 What is your *Expected Timeline*? (e.g. 1 month, 3 weeks)\n\n_⬅️ Type *0* to go back_`);
+            await updateChatState(customerId, "SHOW_QUOTATION");
+            const latestState = await getChatState(customerId);
+            const quotationData = await calculateQuotation(latestState);
+            const quotationText = await buildQuotationText(latestState, quotationData);
+            await message.reply(quotationText);
             return true;
 
         case "EDIT_INFO_MENU":
