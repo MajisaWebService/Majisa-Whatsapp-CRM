@@ -224,6 +224,24 @@ client.on("message_create", async (message) => {
 
             emitNewMessage(savedMessage);
 
+            // Auto-unpause/resume chatbot if customer sends a reset/greeting message
+            if (!message.hasMedia) {
+                const text = message.body.trim().toLowerCase();
+                const newSessionGreetings = ["hi", "hii", "hiii", "hello", "hey", "start", "home", "restart"];
+                const websiteGreeting = "hello majisa web solutions, i would like to inquire about your services.";
+                const isResetMessage = newSessionGreetings.includes(text) || 
+                                      text === "menu" || 
+                                      text.includes("inquire about your services") || 
+                                      text === websiteGreeting;
+
+                if (isResetMessage && (customer.isBotPaused || ["In Progress", "Talk to Executive", "Completed"].includes(customer.status))) {
+                    console.log(`🔄 Auto-resuming chatbot for customer ${customer.customerId} due to greeting/restart.`);
+                    customer.isBotPaused = false;
+                    customer.status = "New Lead";
+                    await customer.save();
+                }
+            }
+
             // Pass to chatbot state machine if not paused by administrator and not a media message.
             if (!customer.isBotPaused && !message.hasMedia) {
                 await handleIncomingMessage(message);

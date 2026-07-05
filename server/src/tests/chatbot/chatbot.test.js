@@ -145,4 +145,35 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
         await handleIncomingMessage(mediaMsg);
         expect(mediaMsg.reply).not.toHaveBeenCalled();
     });
+
+    it("should resume/reset chatbot and change status to New Lead if a paused/executive customer sends a greeting", async () => {
+        // Setup customer as paused and status as Talk to Executive
+        await Customer.findOneAndUpdate(
+            { customerId: testCustomerId },
+            { $set: { isBotPaused: true, status: "Talk to Executive" } }
+        );
+        await ChatState.findOneAndUpdate(
+            { customerId: testCustomerId },
+            { $set: { state: "COMPLETED" } }
+        );
+
+        const msg = {
+            from: testCustomerId,
+            body: "hi",
+            fromMe: false,
+            reply: jest.fn().mockResolvedValue({ id: "123" })
+        };
+
+        await handleIncomingMessage(msg);
+
+        // Verify status and pause are reset
+        const customerCheck = await Customer.findOne({ customerId: testCustomerId });
+        expect(customerCheck.isBotPaused).toBe(false);
+        expect(customerCheck.status).toBe("New Lead");
+
+        // Verify ChatState state is transitioned
+        const stateCheck = await ChatState.findOne({ customerId: testCustomerId });
+        expect(stateCheck.state).toBe("MAIN_MENU");
+        expect(msg.reply).toHaveBeenCalled();
+    });
 });

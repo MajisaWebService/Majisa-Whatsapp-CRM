@@ -143,22 +143,30 @@ export const handleIncomingMessage = async (message) => {
             }
         }
 
-        // If message was not processed by NLP, and customer has an active executive status, bypass the chatbot
-        if (!nlpMatched && customerForNlp && ["In Progress", "Talk to Executive", "Completed"].includes(customerForNlp.status)) {
-            console.log(`🤖 Chatbot bypassed for customer: ${customerForNlp.name || customerId} (Bot paused or executive in active conversation).`);
-            return;
-        }
-
         // ==========================================
-        // Global Commands
+        // Global Reset / Greeting Commands
         // ==========================================
 
         const newSessionGreetings = [
             "hi", "hii", "hiii", "hello", "hey",
             "start", "home", "restart"
         ];
+        const websiteGreeting = "hello majisa web solutions, i would like to inquire about your services.";
+        const isResetMessage = newSessionGreetings.includes(text) || 
+                              text === "menu" || 
+                              text.includes("inquire about your services") || 
+                              text === websiteGreeting;
 
-        if (newSessionGreetings.includes(text)) {
+        if (isResetMessage) {
+            const customer = await getCustomer(customerId);
+            if (customer && (customer.isBotPaused || ["In Progress", "Talk to Executive", "Completed"].includes(customer.status))) {
+                await updateCustomer(customerId, {
+                    isBotPaused: false,
+                    status: "New Lead"
+                });
+                console.log(`🤖 [Reset Command] Bot resumed and status reset to New Lead for customer ${customerId}`);
+            }
+
             await updateChatState(customerId, "WELCOME", {
                 "data.detailsCaptured": false,
                 "data.subType": "",
@@ -172,9 +180,9 @@ export const handleIncomingMessage = async (message) => {
             return;
         }
 
-        if (text === "menu") {
-            await updateChatState(customerId, "WELCOME");
-            await showMainMenu(message);
+        // If message was not processed by NLP, and customer has an active executive status, bypass the chatbot
+        if (!nlpMatched && customerForNlp && ["In Progress", "Talk to Executive", "Completed"].includes(customerForNlp.status)) {
+            console.log(`🤖 Chatbot bypassed for customer: ${customerForNlp.name || customerId} (Bot paused or executive in active conversation).`);
             return;
         }
 
