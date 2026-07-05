@@ -31,7 +31,7 @@ export const LiveChat = () => {
     // 1. Fetch conversations
     const fetchChats = async () => {
         try {
-            const response = await request("http://localhost:5000/api/v1/chats");
+            const response = await request(window.API_BASE_URL + "/api/v1/chats");
             const result = await response.json();
             if (result.success) {
                 setChats(result.data);
@@ -51,7 +51,7 @@ export const LiveChat = () => {
 
         const fetchMessages = async () => {
             try {
-                const response = await request(`http://localhost:5000/api/v1/chats/${activeChat.customer._id}/messages`);
+                const response = await request(`${window.API_BASE_URL}/api/v1/chats/${activeChat.customer._id}/messages`);
                 const result = await response.json();
                 if (result.success) {
                     setMessages(result.data);
@@ -66,7 +66,7 @@ export const LiveChat = () => {
         // Mark chat as read
         const markRead = async () => {
             try {
-                await request(`http://localhost:5000/api/v1/chats/${activeChat._id}/read`, {
+                await request(`${window.API_BASE_URL}/api/v1/chats/${activeChat._id}/read`, {
                     method: "PATCH"
                 });
                 setChats((prev) =>
@@ -167,7 +167,7 @@ export const LiveChat = () => {
         }
 
         try {
-            const response = await request("http://localhost:5000/api/v1/chats/send", {
+            const response = await request(window.API_BASE_URL + "/api/v1/chats/send", {
                 method: "POST",
                 body: JSON.stringify({
                     customerId: activeChat.customer._id,
@@ -215,7 +215,7 @@ export const LiveChat = () => {
             setSending(true);
 
             try {
-                const response = await request("http://localhost:5000/api/v1/chats/upload", {
+                const response = await request(window.API_BASE_URL + "/api/v1/chats/upload", {
                     method: "POST",
                     body: JSON.stringify({
                         customerId: activeChat.customer._id,
@@ -244,7 +244,7 @@ export const LiveChat = () => {
     const handleToggleBot = async () => {
         if (!activeChat) return;
         try {
-            const response = await request(`http://localhost:5000/api/v1/customers/${activeChat.customer._id}/toggle-bot`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/customers/${activeChat.customer._id}/toggle-bot`, {
                 method: "PATCH"
             });
             const result = await response.json();
@@ -264,7 +264,7 @@ export const LiveChat = () => {
     const handleSaveProfileChanges = async () => {
         if (!activeChat) return;
         try {
-            const response = await request(`http://localhost:5000/api/v1/customers/${activeChat.customer._id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/customers/${activeChat.customer._id}`, {
                 method: "PUT",
                 body: JSON.stringify({
                     notes: customerNotes,
@@ -297,7 +297,7 @@ export const LiveChat = () => {
         }
 
         try {
-            const response = await request(`http://localhost:5000/api/v1/chats/${activeChat._id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/chats/${activeChat._id}`, {
                 method: "DELETE"
             });
             const result = await response.json();
@@ -444,7 +444,7 @@ export const LiveChat = () => {
                                 // Render different bubble attachment categories
                                 const renderBubbleContent = () => {
                                     if (msg.type === "IMAGE") {
-                                        return <img src={`http://localhost:5000${msg.message}`} alt="sent image" style={{ maxWidth: "100%", borderRadius: "8px", cursor: "pointer", display: "block" }} onClick={() => window.open(`http://localhost:5000${msg.message}`)} />;
+                                        return <img src={`${window.API_BASE_URL}${msg.message}`} alt="sent image" style={{ maxWidth: "100%", borderRadius: "8px", cursor: "pointer", display: "block" }} onClick={() => window.open(`${window.API_BASE_URL}${msg.message}`)} />;
                                     }
                                     if (msg.type === "PDF") {
                                         return (
@@ -452,13 +452,13 @@ export const LiveChat = () => {
                                                 <span style={{ fontSize: "24px" }}>📄</span>
                                                 <div style={{ minWidth: 0 }}>
                                                     <span style={{ display: "block", fontSize: "12px", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{msg.message.split("/").pop()}</span>
-                                                    <a href={`http://localhost:5000${msg.message}`} target="_blank" rel="noreferrer" style={{ color: isClient ? "var(--color-brand)" : "#fff", textDecoration: "underline", fontSize: "11px", fontWeight: "600" }}>Download PDF</a>
+                                                    <a href={`${window.API_BASE_URL}${msg.message}`} target="_blank" rel="noreferrer" style={{ color: isClient ? "var(--color-brand)" : "#fff", textDecoration: "underline", fontSize: "11px", fontWeight: "600" }}>Download PDF</a>
                                                 </div>
                                             </div>
                                         );
                                     }
                                     if (msg.type === "AUDIO") {
-                                        return <audio src={`http://localhost:5000${msg.message}`} controls style={{ maxWidth: "100%" }} />;
+                                        return <audio src={`${window.API_BASE_URL}${msg.message}`} controls style={{ maxWidth: "100%" }} />;
                                     }
                                     return <div>{msg.message}</div>;
                                 };

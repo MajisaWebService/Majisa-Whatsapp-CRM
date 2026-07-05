@@ -36,7 +36,7 @@ export const Reports = () => {
     const fetchAnalytics = async () => {
         setLoading(true);
         try {
-            const response = await request("http://localhost:5000/api/v1/analytics/stats");
+            const response = await request(window.API_BASE_URL + "/api/v1/analytics/stats");
             const result = await response.json();
             if (result.success) {
                 setAnalytics(result.data);
@@ -58,7 +58,7 @@ export const Reports = () => {
         e.preventDefault();
         setSavingTimes(true);
         try {
-            const response = await request("http://localhost:5000/api/v1/settings", {
+            const response = await request(window.API_BASE_URL + "/api/v1/settings", {
                 method: "PUT",
                 body: JSON.stringify({
                     manualAvgResponseTime: editResponseTime,

@@ -32,7 +32,7 @@ export const Customers = () => {
                 search,
                 status: statusFilter
             });
-            const response = await request(`http://localhost:5000/api/v1/customers?${queryParams}`);
+            const response = await request(`${window.API_BASE_URL}/api/v1/customers?${queryParams}`);
             const result = await response.json();
             if (result.success) {
                 setCustomers(result.data);
@@ -59,7 +59,7 @@ export const Customers = () => {
         setLoadingHistory(true);
         setChatHistory([]);
         try {
-            const response = await request(`http://localhost:5000/api/v1/chats/${customer._id}/messages`);
+            const response = await request(`${window.API_BASE_URL}/api/v1/chats/${customer._id}/messages`);
             const result = await response.json();
             if (result.success) {
                 setChatHistory(result.data);
@@ -82,7 +82,7 @@ export const Customers = () => {
 
     const handleSaveChanges = async () => {
         try {
-            const response = await request(`http://localhost:5000/api/v1/customers/${selectedCustomer._id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/customers/${selectedCustomer._id}`, {
                 method: "PUT",
                 body: JSON.stringify({
                     notes: notesText,
@@ -105,7 +105,7 @@ export const Customers = () => {
         if (!window.confirm("Are you sure you want to delete this customer lead?")) return;
 
         try {
-            const response = await request(`http://localhost:5000/api/v1/customers/${id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/customers/${id}`, {
                 method: "DELETE"
             });
             const result = await response.json();
@@ -422,13 +422,13 @@ export const Customers = () => {
                                             // Handle media render
                                             const renderMessageContent = () => {
                                                 if (msg.type === "IMAGE") {
-                                                    return <img src={`http://localhost:5000${msg.message}`} alt="attachment" style={{ maxWidth: "100%", borderRadius: "6px", display: "block" }} />;
+                                                    return <img src={`${window.API_BASE_URL}${msg.message}`} alt="attachment" style={{ maxWidth: "100%", borderRadius: "6px", display: "block" }} />;
                                                 }
                                                 if (msg.type === "PDF") {
-                                                    return <a href={`http://localhost:5000${msg.message}`} target="_blank" rel="noreferrer" style={{ color: "#fff", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "6px" }}>📄 Download PDF</a>;
+                                                    return <a href={`${window.API_BASE_URL}${msg.message}`} target="_blank" rel="noreferrer" style={{ color: "#fff", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "6px" }}>📄 Download PDF</a>;
                                                 }
                                                 if (msg.type === "AUDIO") {
-                                                    return <audio src={`http://localhost:5000${msg.message}`} controls style={{ maxWidth: "100%" }} />;
+                                                    return <audio src={`${window.API_BASE_URL}${msg.message}`} controls style={{ maxWidth: "100%" }} />;
                                                 }
                                                 return <div>{msg.message}</div>;
                                             };

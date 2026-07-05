@@ -46,7 +46,7 @@ export const Login = () => {
         setForgotLoading(true);
 
         try {
-            const response = await fetch("http://localhost:5000/api/v1/auth/forgot-password", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: forgotEmail })
@@ -74,7 +74,7 @@ export const Login = () => {
         setForgotLoading(true);
 
         try {
-            const response = await fetch("http://localhost:5000/api/v1/auth/reset-password", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/auth/reset-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

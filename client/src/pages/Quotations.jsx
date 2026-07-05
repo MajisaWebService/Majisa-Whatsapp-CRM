@@ -25,7 +25,7 @@ export const Quotations = () => {
 
     const fetchQuotations = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/v1/quotations", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/quotations", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const result = await response.json();
@@ -39,7 +39,7 @@ export const Quotations = () => {
 
     const fetchPricingRules = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/v1/pricing", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/pricing", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const result = await response.json();
@@ -75,7 +75,7 @@ export const Quotations = () => {
 
         const fetchPreview = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/v1/quotations/calculate", {
+                const response = await fetch(window.API_BASE_URL + "/api/v1/quotations/calculate", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -132,7 +132,7 @@ export const Quotations = () => {
         const selectFeatNames = selectedFeatures.map(k => features.find(f => f.key === k)?.name).filter(Boolean);
 
         try {
-            const response = await fetch("http://localhost:5000/api/v1/quotations", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/quotations", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

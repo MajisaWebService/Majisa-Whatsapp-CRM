@@ -46,7 +46,7 @@ export const Settings = () => {
     // Fetch company settings
     const fetchCompanySettings = async () => {
         try {
-            const response = await request("http://localhost:5000/api/v1/settings");
+            const response = await request(window.API_BASE_URL + "/api/v1/settings");
             const result = await response.json();
             if (result.success && result.data) {
                 const s = result.data;
@@ -73,7 +73,7 @@ export const Settings = () => {
         if (admin?.role !== "SUPER_ADMIN") return;
         setLoadingAdmins(true);
         try {
-            const response = await request("http://localhost:5000/api/v1/auth/admins");
+            const response = await request(window.API_BASE_URL + "/api/v1/auth/admins");
             const result = await response.json();
             if (result.success) {
                 setAdmins(result.data);
@@ -98,7 +98,7 @@ export const Settings = () => {
         setPwLoading(true);
 
         try {
-            const response = await request("http://localhost:5000/api/v1/auth/change-password", {
+            const response = await request(window.API_BASE_URL + "/api/v1/auth/change-password", {
                 method: "PUT",
                 body: JSON.stringify({ oldPassword, newPassword })
             });
@@ -124,7 +124,7 @@ export const Settings = () => {
         setCompanyLoading(true);
 
         try {
-            const response = await request("http://localhost:5000/api/v1/settings", {
+            const response = await request(window.API_BASE_URL + "/api/v1/settings", {
                 method: "PUT",
                 body: JSON.stringify({
                     companyName,
@@ -164,7 +164,7 @@ export const Settings = () => {
         setAdminSuccess("");
 
         try {
-            const response = await request("http://localhost:5000/api/v1/auth/register", {
+            const response = await request(window.API_BASE_URL + "/api/v1/auth/register", {
                 method: "POST",
                 body: JSON.stringify({ name: newName, email: newEmail, password: newPass, role: newRole })
             });
@@ -188,7 +188,7 @@ export const Settings = () => {
     // Toggle active status of admin
     const handleToggleAdminStatus = async (id, currentStatus) => {
         try {
-            const response = await request(`http://localhost:5000/api/v1/auth/admins/${id}/status`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/auth/admins/${id}/status`, {
                 method: "PUT",
                 body: JSON.stringify({ isActive: !currentStatus })
             });
@@ -204,7 +204,7 @@ export const Settings = () => {
     // Change role of admin
     const handleChangeAdminRole = async (id, newRoleValue) => {
         try {
-            const response = await request(`http://localhost:5000/api/v1/auth/admins/${id}/role`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/auth/admins/${id}/role`, {
                 method: "PUT",
                 body: JSON.stringify({ role: newRoleValue })
             });
@@ -221,7 +221,7 @@ export const Settings = () => {
     const handleDeleteAdmin = async (id) => {
         if (!window.confirm("Are you sure you want to permanently delete this administrator account?")) return;
         try {
-            const response = await request(`http://localhost:5000/api/v1/auth/admins/${id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/auth/admins/${id}`, {
                 method: "DELETE"
             });
             const result = await response.json();
@@ -238,7 +238,7 @@ export const Settings = () => {
         setBackupSuccess("");
         setBackupLoading(true);
         try {
-            const response = await request("http://localhost:5000/api/v1/settings/backup", {
+            const response = await request(window.API_BASE_URL + "/api/v1/settings/backup", {
                 method: "POST"
             });
             

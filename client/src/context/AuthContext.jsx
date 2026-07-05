@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
     );
     const [loading, setLoading] = useState(true);
 
-    const API_URL = "http://localhost:5000/api/v1/auth";
+    const API_URL = window.API_BASE_URL + "/api/v1/auth";
 
     // Reusable HTTP request client with automatic JWT refresh interception
     const request = async (url, options = {}) => {

@@ -31,7 +31,7 @@ export const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const response = await request("http://localhost:5000/api/v1/dashboard/stats");
+            const response = await request(window.API_BASE_URL + "/api/v1/dashboard/stats");
             const result = await response.json();
             if (result.success) {
                 setStats(result.data.cards);

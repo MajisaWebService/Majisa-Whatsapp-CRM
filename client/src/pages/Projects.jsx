@@ -24,7 +24,7 @@ export const Projects = () => {
 
     const fetchProjects = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/v1/projects", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/projects", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const result = await response.json();
@@ -38,7 +38,7 @@ export const Projects = () => {
 
     const fetchCustomers = async () => {
         try {
-            const response = await fetch("http://localhost:5000/api/v1/customers?limit=100", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/customers?limit=100", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const result = await response.json();
@@ -62,7 +62,7 @@ export const Projects = () => {
     const handleCreateProject = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("http://localhost:5000/api/v1/projects", {
+            const response = await fetch(window.API_BASE_URL + "/api/v1/projects", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -95,7 +95,7 @@ export const Projects = () => {
 
     const handleUpdateStatus = async () => {
         try {
-            const response = await fetch(`http://localhost:5000/api/v1/projects/${editingProject._id}`, {
+            const response = await fetch(`${window.API_BASE_URL}/api/v1/projects/${editingProject._id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

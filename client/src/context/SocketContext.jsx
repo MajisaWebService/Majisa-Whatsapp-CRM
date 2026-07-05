@@ -23,7 +23,7 @@ export const SocketProvider = ({ children }) => {
         }
 
         // Connect to Socket.IO backend with token in query params
-        const newSocket = io("http://localhost:5000", {
+        const newSocket = io(window.API_BASE_URL, {
             query: { token },
             transports: ["websocket"]
         });
@@ -60,7 +60,7 @@ export const SocketProvider = ({ children }) => {
         // Fetch initial status of WhatsApp
         const getInitialStatus = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/v1/dashboard/stats", {
+                const response = await fetch(window.API_BASE_URL + "/api/v1/dashboard/stats", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const result = await response.json();
@@ -76,7 +76,7 @@ export const SocketProvider = ({ children }) => {
         // Fetch initial unread count
         const getUnreadNotifCount = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/v1/notifications/unread-count", {
+                const response = await fetch(window.API_BASE_URL + "/api/v1/notifications/unread-count", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const result = await response.json();

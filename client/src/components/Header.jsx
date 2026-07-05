@@ -14,7 +14,7 @@ export const Header = ({ title }) => {
         const fetchNotifications = async () => {
             if (!token) return;
             try {
-                const response = await fetch("http://localhost:5000/api/v1/notifications?limit=15", {
+                const response = await fetch(window.API_BASE_URL + "/api/v1/notifications?limit=15", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const result = await response.json();
@@ -42,7 +42,7 @@ export const Header = ({ title }) => {
 
     const handleMarkAllRead = async () => {
         try {
-            await fetch("http://localhost:5000/api/v1/notifications/read-all", {
+            await fetch(window.API_BASE_URL + "/api/v1/notifications/read-all", {
                 method: "PATCH",
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -55,7 +55,7 @@ export const Header = ({ title }) => {
 
     const handleMarkSingleRead = async (id) => {
         try {
-            await fetch(`http://localhost:5000/api/v1/notifications/${id}/read`, {
+            await fetch(`${window.API_BASE_URL}/api/v1/notifications/${id}/read`, {
                 method: "PATCH",
                 headers: { Authorization: `Bearer ${token}` }
             });

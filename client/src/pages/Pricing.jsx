@@ -30,7 +30,7 @@ export const Pricing = () => {
     const fetchPricingRules = async () => {
         setLoading(true);
         try {
-            const response = await request("http://localhost:5000/api/v1/pricing");
+            const response = await request(window.API_BASE_URL + "/api/v1/pricing");
             const result = await response.json();
             if (result.success) {
                 setRules(result.data);
@@ -49,7 +49,7 @@ export const Pricing = () => {
     const handleToggleActive = async (id, e) => {
         if (e) e.stopPropagation();
         try {
-            const response = await request(`http://localhost:5000/api/v1/pricing/${id}/toggle`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/pricing/${id}/toggle`, {
                 method: "PATCH"
             });
             const result = await response.json();
@@ -66,7 +66,7 @@ export const Pricing = () => {
     const handleCreateRule = async (e) => {
         e.preventDefault();
         try {
-            const response = await request("http://localhost:5000/api/v1/pricing", {
+            const response = await request(window.API_BASE_URL + "/api/v1/pricing", {
                 method: "POST",
                 body: JSON.stringify({
                     category,
@@ -116,7 +116,7 @@ export const Pricing = () => {
     const handleSaveEdit = async (e) => {
         e.preventDefault();
         try {
-            const response = await request(`http://localhost:5000/api/v1/pricing/${editingRule._id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/pricing/${editingRule._id}`, {
                 method: "PUT",
                 body: JSON.stringify({
                     name,
@@ -149,7 +149,7 @@ export const Pricing = () => {
         if (!window.confirm("Are you sure you want to delete this pricing rule?")) return;
 
         try {
-            const response = await request(`http://localhost:5000/api/v1/pricing/${id}`, {
+            const response = await request(`${window.API_BASE_URL}/api/v1/pricing/${id}`, {
                 method: "DELETE"
             });
             const result = await response.json();
