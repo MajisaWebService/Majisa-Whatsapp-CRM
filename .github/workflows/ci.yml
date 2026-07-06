@@ -54,7 +54,7 @@ jobs:
             echo "Restarting PM2..."
 
             cd ../server
-            pm2 restart majisa-crm
+            pm2 restart majisa-crm --update-env
 
             echo "Saving PM2..."
 
