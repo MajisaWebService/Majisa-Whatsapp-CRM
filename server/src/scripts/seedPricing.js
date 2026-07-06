@@ -113,78 +113,87 @@ const FEATURES = {
     "11": { name: "Done Selecting", price: 0 }
 };
 
-const seed = async () => {
-    try {
-        console.log("Connecting to database...");
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("Connected to MongoDB.");
-
+export const seedPricingData = async (shouldClear = false) => {
+    if (shouldClear) {
         console.log("Clearing existing PricingRules...");
         await PricingRule.deleteMany({});
-
-        const rules = [];
-
-        // 1. Seed Services & Packages
-        Object.entries(SERVICES).forEach(([sKey, sVal], sIndex) => {
-            // Add service
-            rules.push({
-                category: "SERVICE",
-                key: sKey,
-                name: sVal.name,
-                emoji: sVal.emoji,
-                hasSubTypes: sVal.hasSubTypes,
-                hasPages: sVal.hasPages,
-                hasFeatures: sVal.hasFeatures,
-                sortOrder: sIndex
-            });
-
-            // Add subtypes (packages) of this service
-            if (sVal.subTypes) {
-                Object.entries(sVal.subTypes).forEach(([pKey, pVal], pIndex) => {
-                    rules.push({
-                        category: "PACKAGE",
-                        key: `${sKey}_${pKey}`,
-                        name: pVal.name,
-                        price: pVal.basePrice,
-                        serviceKey: sKey,
-                        sortOrder: pIndex
-                    });
-                });
-            }
-        });
-
-        // 2. Seed Page Ranges
-        Object.entries(PAGE_RANGES).forEach(([rKey, rVal], rIndex) => {
-            rules.push({
-                category: "PAGE_RANGE",
-                key: rKey,
-                name: rVal.label,
-                extraPages: rVal.extraPages,
-                pricePerPage: rVal.pricePerPage,
-                sortOrder: rIndex
-            });
-        });
-
-        // 3. Seed Features
-        Object.entries(FEATURES).forEach(([fKey, fVal], fIndex) => {
-            rules.push({
-                category: "FEATURE",
-                key: fKey,
-                name: fVal.name,
-                price: fVal.price,
-                sortOrder: fIndex
-            });
-        });
-
-        console.log(`Inserting ${rules.length} pricing rules...`);
-        await PricingRule.insertMany(rules);
-        console.log("✅ Database seeded successfully!");
-
-        process.exit(0);
-    } catch (error) {
-        console.error("❌ Seeding failed:", error);
-        process.exit(1);
+    } else {
+        const count = await PricingRule.countDocuments();
+        if (count > 0) {
+            console.log("PricingRules already seeded. Skipping.");
+            return;
+        }
     }
+
+    const rules = [];
+
+    // 1. Seed Services & Packages
+    Object.entries(SERVICES).forEach(([sKey, sVal], sIndex) => {
+        // Add service
+        rules.push({
+            category: "SERVICE",
+            key: sKey,
+            name: sVal.name,
+            emoji: sVal.emoji,
+            hasSubTypes: sVal.hasSubTypes,
+            hasPages: sVal.hasPages,
+            hasFeatures: sVal.hasFeatures,
+            sortOrder: sIndex
+        });
+
+        // Add subtypes (packages) of this service
+        if (sVal.subTypes) {
+            Object.entries(sVal.subTypes).forEach(([pKey, pVal], pIndex) => {
+                rules.push({
+                    category: "PACKAGE",
+                    key: `${sKey}_${pKey}`,
+                    name: pVal.name,
+                    price: pVal.basePrice,
+                    serviceKey: sKey,
+                    sortOrder: pIndex
+                });
+            });
+        }
+    });
+
+    // 2. Seed Page Ranges
+    Object.entries(PAGE_RANGES).forEach(([rKey, rVal], rIndex) => {
+        rules.push({
+            category: "PAGE_RANGE",
+            key: rKey,
+            name: rVal.label,
+            extraPages: rVal.extraPages,
+            pricePerPage: rVal.pricePerPage,
+            sortOrder: rIndex
+        });
+    });
+
+    // 3. Seed Features
+    Object.entries(FEATURES).forEach(([fKey, fVal], fIndex) => {
+        rules.push({
+            category: "FEATURE",
+            key: fKey,
+            name: fVal.name,
+            price: fVal.price,
+            sortOrder: fIndex
+        });
+    });
+
+    console.log(`Inserting ${rules.length} pricing rules...`);
+    await PricingRule.insertMany(rules);
+    console.log("✅ Database seeded successfully!");
 };
 
-seed();
+// Run directly if executed via node command
+const isDirectRun = import.meta.url === `file://${process.argv[1]}` || (process.argv[1] && process.argv[1].endsWith("seedPricing.js"));
+if (isDirectRun) {
+    dotenv.config();
+    mongoose.connect(process.env.MONGO_URI)
+        .then(() => seedPricingData(true))
+        .then(() => process.exit(0))
+        .catch(err => {
+            console.error("❌ Seeding failed:", err);
+            process.exit(1);
+        });
+}
+

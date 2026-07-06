@@ -13,6 +13,19 @@ dotenv.config();
 // Connect MongoDB
 await connectDB();
 
+// Auto-seed if database is empty
+try {
+    const PricingRule = (await import("./models/PricingRule.js")).default;
+    const count = await PricingRule.countDocuments();
+    if (count === 0) {
+        console.log("ℹ️ No pricing rules found in database. Auto-seeding defaults...");
+        const { seedPricingData } = await import("./scripts/seedPricing.js");
+        await seedPricingData(false);
+    }
+} catch (seedError) {
+    console.error("⚠️ Auto-seeding failed:", seedError);
+}
+
 const PORT = process.env.PORT || 5000;
 
 // Create HTTP Server
