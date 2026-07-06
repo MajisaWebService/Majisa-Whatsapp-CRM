@@ -146,6 +146,41 @@ describe("Chatbot State Machine & Loop Prevention Tests", () => {
         expect(mediaMsg.reply).not.toHaveBeenCalled();
     });
 
+    it("should resolve options by name or substring when selecting sub-types or pages", async () => {
+        // Update mock rule to have hasPages: true to simulate real-world service
+        await PricingRule.findOneAndUpdate(
+            { category: "SERVICE", key: "1" },
+            { $set: { hasPages: true } }
+        );
+
+        // Setup state for SELECT_SUB_TYPE
+        await ChatState.findOneAndUpdate(
+            { customerId: testCustomerId },
+            { 
+                $set: { 
+                    state: "SELECT_SUB_TYPE",
+                    serviceKey: "1",
+                    service: "Website Development"
+                } 
+            }
+        );
+
+        const msg = {
+            from: testCustomerId,
+            body: "business website", // Choose by name instead of "1"
+            fromMe: false,
+            reply: jest.fn().mockResolvedValue({ id: "123" })
+        };
+
+        await handleIncomingMessage(msg);
+        expect(msg.reply).toHaveBeenCalled();
+
+        const stateCheck = await ChatState.findOne({ customerId: testCustomerId });
+        expect(stateCheck.state).toBe("SELECT_PAGES");
+        expect(stateCheck.data.subType).toBe("Business Website");
+        expect(stateCheck.data.subTypeKey).toBe("1");
+    });
+
     it("should resume/reset chatbot and change status to New Lead if a paused/executive customer sends a greeting", async () => {
         // Setup customer as paused and status as Talk to Executive
         await Customer.findOneAndUpdate(

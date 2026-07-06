@@ -19,6 +19,41 @@ import {
 } from "../config/pricing.config.js";
 import { showReviewScreen } from "./customer.handler.js";
 
+export const resolveOption = (userInput, optionsMap, nameProperty = "name") => {
+    // 1. Direct Key Match (highest priority)
+    if (userInput && optionsMap[userInput]) {
+        return { key: userInput, value: optionsMap[userInput] };
+    }
+
+    const cleanInput = userInput.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!cleanInput) return null;
+
+    // 2. Exact Normalized Match
+    for (const [key, option] of Object.entries(optionsMap)) {
+        const optionName = option[nameProperty] || option.label || "";
+        const cleanOptionName = optionName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (cleanInput === cleanOptionName) {
+            return { key, value: option };
+        }
+    }
+
+    // 3. Substring Match (Case-insensitive contains)
+    const candidates = [];
+    for (const [key, option] of Object.entries(optionsMap)) {
+        const optionName = option[nameProperty] || option.label || "";
+        const cleanOptionName = optionName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (cleanOptionName.includes(cleanInput) || cleanInput.includes(cleanOptionName)) {
+            candidates.push({ key, value: option });
+        }
+    }
+
+    if (candidates.length === 1) {
+        return candidates[0];
+    }
+
+    return null;
+};
+
 export const handleServiceFlow = async (message, chatState) => {
     const SERVICES = await getServices();
     const PAGE_RANGES = await getPageRanges();
@@ -41,9 +76,9 @@ export const handleServiceFlow = async (message, chatState) => {
                 return;
             }
 
-            const subType = service.subTypes[text];
+            const resolved = resolveOption(text, service.subTypes);
 
-            if (!subType) {
+            if (!resolved) {
                 const maxOption = Object.keys(service.subTypes).length;
                 const { handleInvalidInput } = await import("../index.js");
                 return await handleInvalidInput(
@@ -53,10 +88,13 @@ export const handleServiceFlow = async (message, chatState) => {
                 );
             }
 
+            const subType = resolved.value;
+            const subTypeKey = resolved.key;
+
             // Save sub-type selection
             await updateChatState(customerId, "SELECT_SUB_TYPE", {
                 "data.subType": subType.name,
-                "data.subTypeKey": text
+                "data.subTypeKey": subTypeKey
             });
 
             // Next: Pages or Features or Quotation
@@ -84,9 +122,9 @@ export const handleServiceFlow = async (message, chatState) => {
         // ------------------------------------------
 
         case "SELECT_PAGES": {
-            const pageRange = PAGE_RANGES[text];
+            const resolved = resolveOption(text, PAGE_RANGES);
 
-            if (!pageRange) {
+            if (!resolved) {
                 const { handleInvalidInput } = await import("../index.js");
                 return await handleInvalidInput(
                     message,
@@ -95,10 +133,13 @@ export const handleServiceFlow = async (message, chatState) => {
                 );
             }
 
+            const pageRange = resolved.value;
+            const pageRangeKey = resolved.key;
+
             // Save page range
             await updateChatState(customerId, "SELECT_PAGES", {
                 "data.pageRange": pageRange.label,
-                "data.pageRangeKey": text
+                "data.pageRangeKey": pageRangeKey
             });
 
             // Next: Features or Quotation
@@ -130,15 +171,16 @@ export const handleServiceFlow = async (message, chatState) => {
                 return await message.reply(quotationText);
             }
 
-            // Parse comma-separated feature numbers
+            // Parse comma-separated feature numbers or names
             const rawKeys = text.split(",").map(s => s.trim());
             const validKeys = [];
             const validNames = [];
 
             for (const key of rawKeys) {
-                if (FEATURES[key] && FEATURES[key].name !== "Done Selecting") {
-                    validKeys.push(key);
-                    validNames.push(FEATURES[key].name);
+                const resolved = resolveOption(key, FEATURES);
+                if (resolved && resolved.value.name !== "Done Selecting") {
+                    validKeys.push(resolved.key);
+                    validNames.push(resolved.value.name);
                 }
             }
 
