@@ -1,0 +1,6 @@
+.mongo_data/
+node_modules/
+.env
+.env.local
+*.log
+.wwebjs_cache/

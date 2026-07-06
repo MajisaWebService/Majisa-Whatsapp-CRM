@@ -303,7 +303,7 @@ export const handleIncomingMessage = async (message) => {
 
                 await updateChatState(customerId, "ASK_NAME", {
                     service: service.name,
-                    serviceKey: text,
+                    serviceKey: serviceKey,
                     "data.detailsCaptured": false,
                     "data.name": "",
                     "data.company": "",
