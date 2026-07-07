@@ -12,6 +12,9 @@ import { apiLimiter } from "./middleware/rateLimiter.middleware.js";
 
 const app = express();
 
+// ✅ Tell Express it is running behind Nginx
+app.set("trust proxy", 1);
+
 // Secure headers via Helmet
 app.use(helmet({
     contentSecurityPolicy: {
